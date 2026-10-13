@@ -1,0 +1,602 @@
+// AI Equipment Rental Operations — data model
+//
+// Three groups of tables:
+//   1. Business domain      → User, Customer, Equipment, EquipmentMaintenance, MaintenanceOrder,
+//                             Rental, RentalDocument, Payment
+//   2. Agent observability  → AgentExecution, AgentToolCall
+//   3. Control & outcomes   → HumanReview, Alert, Notification, AuditLog
+//
+// Money is stored in MZN (Mozambican metical).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── ENUMS ───────────────────────────────
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  REVIEWER
+}
+
+/// Self-service customer account. Only the Onboarding Agent moves it out of PENDING.
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum EquipmentType {
+  EXCAVATOR
+  BULLDOZER
+  GENERATOR
+  CRANE
+  LOADER
+  COMPACTOR
+  OTHER
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  RESERVED
+  RENTED
+  /// Flagged by the Maintenance Agent: service needed soon, no new rentals until it is done.
+  MAINTENANCE_PENDING
+  MAINTENANCE
+  BLOCKED
+  RETIRED
+}
+
+enum MaintenanceOrderType {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+}
+
+enum MaintenanceOrderStatus {
+  OPEN
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  MPESA
+  EMOLA
+  BANK_TRANSFER
+  CARD
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum AlertCategory {
+  MAINTENANCE
+  FINANCE
+  RISK
+  OPERATIONS
+}
+
+/// RENTAL_DECISION pauses a rental workflow. ANOMALY flags a pattern for a human to look at — it is never an accusation.
+enum ReviewKind {
+  RENTAL_DECISION
+  ANOMALY
+}
+
+enum MaintenanceType {
+  SCHEDULED_SERVICE
+  INSPECTION
+  REPAIR
+  ISSUE_REPORT
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum RentalStatus {
+  REQUESTED
+  IN_REVIEW
+  REQUIRES_HUMAN_REVIEW
+  APPROVED
+  REJECTED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+/// Where the Orchestrator is in the workflow. Persisted so a workflow can pause (human review) and resume.
+enum WorkflowStep {
+  INTAKE
+  DOCUMENT_CHECK
+  MAINTENANCE_CHECK
+  RISK_ASSESSMENT
+  FINANCE_CHECK
+  AWAITING_HUMAN
+  FINALIZE
+  BILLING
+  NOTIFY
+  DONE
+}
+
+enum DocumentType {
+  ID_DOCUMENT
+  OPERATOR_LICENSE
+  INSURANCE_CERTIFICATE
+  COMPANY_REGISTRATION
+  RENTAL_CONTRACT
+}
+
+enum DocumentStatus {
+  VALID
+  PENDING_VERIFICATION
+  EXPIRED
+  REJECTED
+}
+
+enum AgentName {
+  ORCHESTRATOR
+  RENTAL
+  DOCUMENTS
+  MAINTENANCE
+  RISK
+  FINANCE
+  APPROVAL
+  NOTIFICATION
+  /// Customer-facing chat on the QR pages: read-only tools, cannot decide anything.
+  ASSISTANT
+  /// Validates self-service customer registrations (activates or rejects the account).
+  ONBOARDING
+}
+
+enum ExecutionStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum AgentDecision {
+  PROCEED
+  APPROVE
+  REJECT
+  BLOCK
+  ESCALATE
+  NONE
+}
+
+enum ToolCallStatus {
+  SUCCESS
+  ERROR
+  DENIED
+}
+
+/// Who decided to invoke a tool: the LLM itself, the agent's required-evidence policy, or the agent's action step.
+enum ToolCallSource {
+  LLM
+  POLICY
+  AGENT
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  INTERNAL
+}
+
+enum NotificationType {
+  RENTAL_APPROVED
+  RENTAL_REJECTED
+  MAINTENANCE_ALERT
+  DOCUMENTS_MISSING
+  HUMAN_REVIEW_REQUIRED
+  RETURN_REMINDER
+  RETURN_OVERDUE
+  PAYMENT_ALERT
+  MAINTENANCE_DUE
+  ANOMALY_REVIEW
+}
+
+enum NotificationStatus {
+  SIMULATED
+  SENT
+  FAILED
+}
+
+enum ActorType {
+  AGENT
+  USER
+  SYSTEM
+}
+
+// ─────────────────────────── BUSINESS DOMAIN ───────────────────────────
+
+model User {
+  id              String        @id @default(cuid())
+  name            String
+  email           String        @unique
+  role            UserRole      @default(OPERATOR)
+  /// scrypt hash (salt:hash). Null = the user cannot sign in.
+  passwordHash    String?
+  isActive        Boolean       @default(true)
+  lastLoginAt     DateTime?
+  resolvedReviews HumanReview[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Customer {
+  id                    String           @id @default(cuid())
+  code                  String           @unique // CUS-001
+  companyName           String
+  taxId                 String           @unique // NIF
+  contactName           String
+  email                 String
+  phone                 String?
+  /// Blacklisted customers are rejected by a deterministic rule — never by the LLM.
+  isBlocked             Boolean          @default(false)
+  creditLimit           Decimal?         @db.Decimal(12, 2)
+  notes                 String?
+  /// Customer portal account (self-registration). All null = no account, e.g. created by the admin or a QR request.
+  loginEmail            String?          @unique
+  passwordHash          String?
+  accountStatus         AccountStatus?
+  /// Why the Onboarding Agent activated or rejected the account (shown to the customer).
+  accountDecisionReason String?
+  accountRequestedAt    DateTime?
+  rentals               Rental[]
+  documents             RentalDocument[]
+  notifications         Notification[]
+  payments              Payment[]
+  reviews               HumanReview[]
+  alerts                Alert[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+}
+
+model Equipment {
+  id                      String                 @id @default(cuid())
+  /// Encoded in the physical QR Code → /equipment/{code}
+  code                    String                 @unique
+  name                    String
+  type                    EquipmentType
+  brand                   String
+  model                   String
+  serialNumber            String                 @unique
+  status                  EquipmentStatus        @default(AVAILABLE)
+  dailyRate               Decimal                @db.Decimal(10, 2)
+  location                String?
+  lastMaintenanceAt       DateTime?
+  nextMaintenanceDue      DateTime?
+  requiresOperatorLicense Boolean                @default(false)
+  /// Engine-hour meter. Service is due every `serviceIntervalHours` since `hoursAtLastService`.
+  usageHours              Int                    @default(0)
+  hoursAtLastService      Int                    @default(0)
+  serviceIntervalHours    Int?
+  maintenances            EquipmentMaintenance[]
+  maintenanceOrders       MaintenanceOrder[]
+  rentals                 Rental[]
+  alerts                  Alert[]
+  reviews                 HumanReview[]
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+}
+
+model EquipmentMaintenance {
+  id          String            @id @default(cuid())
+  equipmentId String
+  equipment   Equipment         @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  type        MaintenanceType
+  status      MaintenanceStatus @default(RESOLVED)
+  /// Null on a fresh issue report: classifying it is one of the Maintenance Agent's AI tasks.
+  severity    Severity?
+  description String
+  performedBy String?
+  performedAt DateTime?
+  nextDueAt   DateTime?
+  reportedAt  DateTime          @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([equipmentId, status])
+}
+
+/// Work order created by the Maintenance Agent (preventive service, inspection, repair).
+model MaintenanceOrder {
+  id             String                 @id @default(cuid())
+  code           String                 @unique // MO-2026-0001
+  equipmentId    String
+  equipment      Equipment              @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  type           MaintenanceOrderType
+  status         MaintenanceOrderStatus @default(OPEN)
+  priority       Severity               @default(MEDIUM)
+  reason         String
+  createdByAgent AgentName?
+  dueBy          DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([equipmentId, status])
+}
+
+/// A Rental is created at request time (status REQUESTED) and is the anchor of the whole workflow:
+/// its id is the correlationId shared by executions, tool calls, reviews, notifications and audit logs.
+model Rental {
+  id                 String         @id @default(cuid())
+  code               String         @unique // RNT-2026-0001
+  customerId         String
+  customer           Customer       @relation(fields: [customerId], references: [id])
+  equipmentId        String
+  equipment          Equipment      @relation(fields: [equipmentId], references: [id])
+  startDate          DateTime
+  endDate            DateTime
+  dailyRate          Decimal        @db.Decimal(10, 2) // snapshot at request time
+  totalAmount        Decimal        @db.Decimal(12, 2)
+  intendedUse        String? // free text from the customer
+  /// Who filled in the QR form — kept as submitted, never copied over the customer record.
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  paymentMethod      PaymentMethod?
+  /// Conditions attached by the Approval Agent (e.g. "present valid insurance at pickup").
+  approvalConditions String[]       @default([])
+  status             RentalStatus   @default(REQUESTED)
+  workflowStep       WorkflowStep   @default(INTAKE)
+  riskLevel          RiskLevel?
+  riskScore          Int?
+  decisionReason     String?
+  /// Customer-facing explanation (friendly, actionable). decisionReason stays internal.
+  customerMessage    String?
+  decidedByAgent     AgentName?
+  decidedAt          DateTime?
+
+  // Post-rental facts — the customer's history that the Risk Agent reads on future requests
+  actualReturnAt DateTime?
+  lateDays       Int       @default(0)
+  damageReported Boolean   @default(false)
+  damageNotes    String?
+  /// Engine hours recorded at return — the Risk Agent compares it with the rental length.
+  hoursUsed      Int?
+
+  documents     RentalDocument[]
+  executions    AgentExecution[]
+  reviews       HumanReview[]
+  notifications Notification[]
+  alerts        Alert[]
+  payments      Payment[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([equipmentId, startDate, endDate])
+  @@index([customerId])
+  @@index([status])
+}
+
+model RentalDocument {
+  id                String         @id @default(cuid())
+  customerId        String
+  customer          Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// Null = a customer-level document reused across rentals (ID, insurance, licence).
+  rentalId          String?
+  rental            Rental?        @relation(fields: [rentalId], references: [id])
+  type              DocumentType
+  status            DocumentStatus @default(PENDING_VERIFICATION)
+  documentNumber    String?
+  issuedAt          DateTime?
+  expiresAt         DateTime?
+  /// Uploaded photo (relative path under backend/uploads).
+  fileUrl           String?
+  /// What the Document Agent read from the photo, and why it accepted/rejected it.
+  extractedData     Json?
+  verificationNotes String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([customerId, type])
+}
+
+/// Amount due for a rental. Created by the Finance Agent when a rental is approved.
+model Payment {
+  id         String         @id @default(cuid())
+  reference  String         @unique // PAY-2026-0001
+  rentalId   String
+  rental     Rental         @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id])
+  amount     Decimal        @db.Decimal(12, 2) // MZN
+  dueDate    DateTime
+  status     PaymentStatus  @default(PENDING)
+  paidAt     DateTime?
+  method     PaymentMethod?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([status, dueDate])
+  @@index([customerId])
+}
+
+// ─────────────────────────── AGENT OBSERVABILITY ───────────────────────────
+
+/// One agent run within a workflow step. Answers: which agent, when, with what input, what decision, why.
+model AgentExecution {
+  id             String          @id @default(cuid())
+  correlationId  String // = rentalId (or a scheduled job id)
+  rentalId       String?
+  rental         Rental?         @relation(fields: [rentalId], references: [id])
+  agent          AgentName
+  step           WorkflowStep?
+  trigger        String // event that caused this run, e.g. "rental.requested"
+  status         ExecutionStatus @default(RUNNING)
+  decision       AgentDecision?
+  summary        String? // one-liner for the activity feed
+  reasoning      String? // grounded explanation
+  confidence     Float?
+  input          Json?
+  output         Json?
+  usedLLM        Boolean         @default(false)
+  model          String?
+  inputTokens    Int?
+  outputTokens   Int?
+  /// True when the deterministic Policy Guard overrode the LLM's decision.
+  policyOverride Boolean         @default(false)
+  error          String?
+  startedAt      DateTime        @default(now())
+  finishedAt     DateTime?
+  durationMs     Int?
+  toolCalls      AgentToolCall[]
+  reviews        HumanReview[]
+
+  @@index([correlationId, startedAt])
+  @@index([agent, startedAt])
+}
+
+/// Every tool an agent invoked — including DENIED attempts (tool outside its allowlist).
+model AgentToolCall {
+  id           String         @id @default(cuid())
+  executionId  String
+  execution    AgentExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  toolName     String
+  source       ToolCallSource @default(AGENT)
+  arguments    Json
+  result       Json?
+  status       ToolCallStatus
+  errorMessage String?
+  durationMs   Int?
+  createdAt    DateTime       @default(now())
+
+  @@index([executionId])
+}
+
+// ─────────────────────────── CONTROL & OUTCOMES ───────────────────────────
+
+model HumanReview {
+  id                String          @id @default(cuid())
+  kind              ReviewKind      @default(RENTAL_DECISION)
+  /// Set for RENTAL_DECISION reviews; anomaly reviews may concern a customer or a machine instead.
+  rentalId          String?
+  rental            Rental?         @relation(fields: [rentalId], references: [id])
+  customerId        String?
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  equipmentId       String?
+  equipment         Equipment?      @relation(fields: [equipmentId], references: [id])
+  /// Prevents the monitoring cycle from opening the same review twice.
+  dedupeKey         String?         @unique
+  executionId       String?
+  execution         AgentExecution? @relation(fields: [executionId], references: [id])
+  requestedByAgent  AgentName
+  reason            String
+  analyzedData      Json // the facts the agent saw when it escalated
+  recommendedAction String
+  priority          Severity        @default(MEDIUM)
+  status            ReviewStatus    @default(PENDING)
+  resolvedById      String?
+  resolvedBy        User?           @relation(fields: [resolvedById], references: [id])
+  /// Set when an agent (not a person) resolved the case — autonomous mode, audited after the fact.
+  resolvedByAgent   AgentName?
+  resolutionNotes   String?
+  resolvedAt        DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([status])
+}
+
+model Alert {
+  id          String        @id @default(cuid())
+  equipmentId String?
+  equipment   Equipment?    @relation(fields: [equipmentId], references: [id])
+  rentalId    String?
+  rental      Rental?       @relation(fields: [rentalId], references: [id])
+  customerId  String?
+  customer    Customer?     @relation(fields: [customerId], references: [id])
+  category    AlertCategory @default(OPERATIONS)
+  sourceAgent AgentName
+  severity    Severity
+  title       String
+  message     String
+  status      AlertStatus   @default(OPEN)
+  /// Same condition seen again by the monitoring cycle → no duplicate alert.
+  dedupeKey   String?       @unique
+  createdAt   DateTime      @default(now())
+  resolvedAt  DateTime?
+
+  @@index([status])
+}
+
+model Notification {
+  id         String              @id @default(cuid())
+  rentalId   String?
+  rental     Rental?             @relation(fields: [rentalId], references: [id])
+  customerId String?
+  customer   Customer?           @relation(fields: [customerId], references: [id])
+  type       NotificationType
+  channel    NotificationChannel
+  recipient  String
+  subject    String
+  body       String
+  /// Set by the Notification Agent from the severity of the underlying event.
+  priority   Severity            @default(MEDIUM)
+  status     NotificationStatus  @default(SIMULATED)
+  /// e.g. "RETURN_REMINDER:<rentalId>:<date>" — one reminder per rental per day.
+  dedupeKey  String?             @unique
+  createdAt  DateTime            @default(now())
+
+  @@index([priority, createdAt])
+}
+
+model AuditLog {
+  id            String    @id @default(cuid())
+  correlationId String?
+  actorType     ActorType
+  actorId       String // agent name | userId | "system"
+  action        String // e.g. "rental.approved", "equipment.status_changed"
+  entityType    String
+  entityId      String
+  before        Json?
+  after         Json?
+  metadata      Json? // e.g. { executionId, toolName }
+  createdAt     DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([correlationId])
+}

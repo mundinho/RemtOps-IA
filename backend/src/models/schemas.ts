@@ -1,0 +1,148 @@
+import { AgentName } from '@prisma/client';
+import { z } from 'zod';
+
+/**
+ * Request validation at the HTTP boundary.
+ * Only the *shape* is checked here — business rules (availability, max duration, documents)
+ * are evaluated later by the agents, so every rejection is traced and explained.
+ */
+
+const isoDate = z.iso.date().transform((value) => new Date(`${value}T00:00:00`));
+
+export const PAYMENT_METHODS = ['MPESA', 'EMOLA', 'BANK_TRANSFER', 'CARD', 'CASH'] as const;
+
+/** What the person scanning the QR code fills in. The company is identified by its NUIT. */
+export const RentalRequestSchema = z
+  .object({
+    companyName: z.string().trim().min(2, 'Company or full name is required').max(150),
+    taxId: z.string().trim().regex(/^\d{9}$/, 'NUIT must have 9 digits'),
+    contactName: z.string().trim().min(2, 'Contact name is required').max(120),
+    email: z.email('Invalid email').trim().toLowerCase(),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
+    paymentMethod: z.enum(PAYMENT_METHODS),
+    startDate: isoDate,
+    endDate: isoDate,
+    intendedUse: z.string().trim().max(1000).optional(),
+  })
+  .refine((data) => data.endDate >= data.startDate, {
+    message: 'endDate must be on or after startDate',
+    path: ['endDate'],
+  });
+export type RentalRequestInput = z.infer<typeof RentalRequestSchema>;
+
+export const DOCUMENT_TYPES = ['ID_DOCUMENT', 'INSURANCE_CERTIFICATE', 'OPERATOR_LICENSE', 'COMPANY_REGISTRATION'] as const;
+
+/**
+ * Admin registration of a customer (dashboard → Customers). The documents listed here were checked
+ * by the admin; the Risk Agent then treats them as on file (VALID until they expire).
+ */
+export const CustomerInputSchema = z.object({
+  companyName: z.string().trim().min(2, 'Company or full name is required').max(150),
+  taxId: z.string().trim().regex(/^\d{9}$/, 'NUIT must have 9 digits'),
+  contactName: z.string().trim().min(2, 'Contact name is required').max(120),
+  email: z.email('Invalid email').trim().toLowerCase(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  creditLimit: z.coerce.number().min(0).nullable().optional(),
+  notes: z.string().trim().max(1000).optional(),
+  documents: z
+    .array(
+      z.object({
+        type: z.enum(DOCUMENT_TYPES),
+        documentNumber: z.string().trim().max(60).optional(),
+        expiresAt: isoDate,
+      }),
+    )
+    .refine((docs) => new Set(docs.map((d) => d.type)).size === docs.length, 'Each document type can only be listed once')
+    .default([]),
+});
+export type CustomerInput = z.infer<typeof CustomerInputSchema>;
+
+// ── Authentication ──
+
+const password = z.string().min(8, 'Password must have at least 8 characters').max(100);
+
+export const LoginSchema = z.object({
+  email: z.email('Invalid email').trim().toLowerCase(),
+  password: z.string().min(1, 'Password is required').max(100),
+});
+
+/** Customer self-registration. The account stays PENDING until the Onboarding Agent decides. */
+export const CustomerRegistrationSchema = z.object({
+  companyName: z.string().trim().min(2, 'Company or full name is required').max(150),
+  taxId: z.string().trim().regex(/^\d{9}$/, 'NUIT must have 9 digits'),
+  contactName: z.string().trim().min(2, 'Contact name is required').max(120),
+  email: z.email('Invalid email').trim().toLowerCase(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
+  password,
+});
+export type CustomerRegistrationInput = z.infer<typeof CustomerRegistrationSchema>;
+
+/** Staff account created by an admin. */
+export const UserInputSchema = z.object({
+  name: z.string().trim().min(2, 'Name is required').max(120),
+  email: z.email('Invalid email').trim().toLowerCase(),
+  role: z.enum(['ADMIN', 'OPERATOR']),
+  password,
+});
+export type UserInput = z.infer<typeof UserInputSchema>;
+
+/** Admin changes to an existing staff account; a password here resets it. */
+export const UserUpdateSchema = z.object({
+  role: z.enum(['ADMIN', 'OPERATOR']).optional(),
+  isActive: z.boolean().optional(),
+  password: password.optional(),
+});
+export type UserUpdate = z.infer<typeof UserUpdateSchema>;
+
+/** A chat turn from the public assistant widget. History is kept by the browser and bounded here. */
+export const AssistantChatSchema = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(600) }))
+    .min(1)
+    .max(12)
+    .refine((m) => m.at(-1)?.role === 'user', 'The last message must come from the user'),
+  rentalId: z.string().min(1).optional(),
+});
+
+export const EquipmentCodeParam = z.object({ code: z.string().regex(/^EQP-\d{3}$/) });
+export const IdParam = z.object({ id: z.string().min(1) });
+
+export const RentalListQuery = z.object({
+  status: z
+    .enum(['REQUESTED', 'IN_REVIEW', 'REQUIRES_HUMAN_REVIEW', 'APPROVED', 'REJECTED', 'ACTIVE', 'COMPLETED', 'CANCELLED'])
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+});
+
+export const ExecutionListQuery = z.object({
+  // Derived from the Prisma enum, so a new agent can never be missing from the filter again
+  agent: z.enum(AgentName).optional(),
+  correlationId: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export const ReviewListQuery = z.object({
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+});
+
+export const AlertListQuery = z.object({
+  status: z.enum(['OPEN', 'ACKNOWLEDGED', 'RESOLVED']).optional(),
+});
+
+export const AuditListQuery = z.object({
+  entityType: z.string().optional(),
+  entityId: z.string().optional(),
+  correlationId: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+});
