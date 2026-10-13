@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ExternalLink, Printer, RefreshCw } from '@lucide/vue';
 import { ref } from 'vue';
+import { isAdmin } from '@/services/session';
 import { systemApi } from '@/services/system.api';
 import QrCodeImage from '@/components/equipment/QrCodeImage.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
@@ -15,7 +16,7 @@ const print = () => window.print();
 
 const resetting = ref(false);
 async function resetDemo() {
-  if (!confirm('Reset all demo data? Requests, agent runs, reviews and alerts will be cleared.')) return;
+  if (!confirm('Reset all demo data? Requests, agent runs, reviews, alerts and accounts will be cleared, and you will need to sign in again.')) return;
   resetting.value = true;
   try {
     await systemApi.resetDemo();
@@ -33,6 +34,7 @@ async function resetDemo() {
   >
     <template #actions>
       <button
+        v-if="isAdmin()"
         class="no-print inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
         :disabled="resetting"
         @click="resetDemo"
