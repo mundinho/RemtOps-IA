@@ -8,6 +8,7 @@ import { financeCheckRules } from '../src/agents/finance/rules.js';
 import { planFleetMaintenance, type FleetItem } from '../src/agents/maintenance/monitoringRules.js';
 import { maintenanceRules } from '../src/agents/maintenance/rules.js';
 import { onboardingRules, type RegistrationFacts } from '../src/agents/onboarding/rules.js';
+import { RentalRequestSchema } from '../src/models/schemas.js';
 import { normalizePhone, toSmsText } from '../src/sms/gateway.js';
 import { detectAnomalies } from '../src/agents/risk/RiskMonitor.js';
 import { riskRules } from '../src/agents/risk/rules.js';
@@ -266,5 +267,24 @@ describe('SMS formatting — one credit per message', () => {
     expect(text).toMatch(/^RentOps: Pedido aprovado - Escavadora/);
     expect(text.endsWith(link)).toBe(true);
     expect(/[^\x20-\x7E\n]/.test(text)).toBe(false);
+  });
+});
+
+describe('Phone validation — an SMS must be able to arrive', () => {
+  const base = { companyName: 'Obras Lda', taxId: '400111222', contactName: 'Ana Matos', email: 'ana@obras.co.mz', paymentMethod: 'MPESA', startDate: '2030-01-10', endDate: '2030-01-12' };
+  const phoneOk = (phone: string, country = 'MZ') => RentalRequestSchema.safeParse({ ...base, phone, country }).success;
+
+  it('accepts 9-digit Mozambican numbers, with or without +258', () => {
+    expect(phoneOk('+258 84 123 4567')).toBe(true);
+    expect(phoneOk('841234567')).toBe(true);
+    expect(phoneOk('+258 21 123 456')).toBe(false); // landline with only 8 digits
+  });
+
+  it('rejects Mozambican numbers with a digit missing', () => {
+    expect(phoneOk('+258 84123456')).toBe(false);
+  });
+
+  it('keeps the generic check for other countries', () => {
+    expect(phoneOk('+27 82 555 1234', 'ZA')).toBe(true);
   });
 });

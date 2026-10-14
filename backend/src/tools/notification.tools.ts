@@ -80,15 +80,20 @@ export const createNotification = defineTool({
       customerId,
     });
 
-    // Plus one SMS for the events that have a fixed SMS text (one credit each), when the customer has a phone.
+    // Plus one SMS for the events that have a fixed SMS text (one credit each). It goes to the phone typed
+    // in the rental form — the person who is renting — or, without one, to the phone on the customer record.
     let sms: { id: string; status: string } | undefined;
     const smsText = SMS_TEXT[message.type];
-    if (smsText && customer.phone) {
+    const rentalPhone = rentalId
+      ? (await prisma.rental.findUnique({ where: { id: rentalId }, select: { contactPhone: true } }))?.contactPhone
+      : null;
+    const smsTo = rentalPhone || customer.phone;
+    if (smsText && smsTo) {
       const created = await notificationService.createNotification({
         type: message.type,
         priority: message.priority,
         channel: 'SMS',
-        recipient: customer.phone,
+        recipient: smsTo,
         subject: message.subject,
         body: smsText,
         rentalId,

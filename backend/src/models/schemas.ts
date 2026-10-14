@@ -19,6 +19,19 @@ const country = z
   .regex(/^[A-Z]{2}$/, 'Invalid country')
   .default('MZ');
 
+/**
+ * A Mozambican number must have 9 digits after +258 (mobile 8x…, landline 2x…) — otherwise an SMS can
+ * never arrive. Other countries keep the generic format check.
+ */
+const isValidPhoneForCountry = ({ phone, country }: { phone?: string; country: string }) => {
+  if (!phone) return true;
+  const digits = phone.replace(/\D/g, '');
+  if (country !== 'MZ' && !digits.startsWith('258')) return true;
+  const local = digits.startsWith('258') ? digits.slice(3) : digits;
+  return /^[82]\d{8}$/.test(local);
+};
+const MZ_PHONE_ERROR = { message: 'A Mozambican number has 9 digits after +258 (e.g. 84 123 4567)', path: ['phone'] };
+
 /** What the person scanning the QR code fills in. The company is identified by its NUIT. */
 export const RentalRequestSchema = z
   .object({
@@ -39,7 +52,8 @@ export const RentalRequestSchema = z
   .refine((data) => data.endDate >= data.startDate, {
     message: 'endDate must be on or after startDate',
     path: ['endDate'],
-  });
+  })
+  .refine(isValidPhoneForCountry, MZ_PHONE_ERROR);
 export type RentalRequestInput = z.infer<typeof RentalRequestSchema>;
 
 export const DOCUMENT_TYPES = ['ID_DOCUMENT', 'INSURANCE_CERTIFICATE', 'OPERATOR_LICENSE', 'COMPANY_REGISTRATION'] as const;
@@ -72,7 +86,7 @@ export const CustomerInputSchema = z.object({
     )
     .refine((docs) => new Set(docs.map((d) => d.type)).size === docs.length, 'Each document type can only be listed once')
     .default([]),
-});
+}).refine(isValidPhoneForCountry, MZ_PHONE_ERROR);
 export type CustomerInput = z.infer<typeof CustomerInputSchema>;
 
 // ── Authentication ──
@@ -96,7 +110,7 @@ export const CustomerRegistrationSchema = z.object({
     .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
   country,
   password,
-});
+}).refine(isValidPhoneForCountry, MZ_PHONE_ERROR);
 export type CustomerRegistrationInput = z.infer<typeof CustomerRegistrationSchema>;
 
 /** Staff account created by an admin. */
