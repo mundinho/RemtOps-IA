@@ -31,6 +31,23 @@ services:
       db: { condition: service_healthy }
     networks: [internal, mailcow]
 
+  # Local LLM for the agents (CPU only). This server also runs Mailcow for another business, so the
+  # model is capped to half the CPUs and a fixed amount of memory, and is reachable only by the API
+  # on the internal network (no published port).
+  ollama:
+    image: ollama/ollama:0.35.0
+    container_name: rentops-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"        # one request at a time — agents queue instead of competing for CPU
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_KEEP_ALIVE: "30m"        # keep the model in memory between requests
+    volumes:
+      - ollama:/root/.ollama
+    networks: [internal]
+    cpus: 2
+    mem_limit: 6g
+
   web:
     build: { context: .., dockerfile: deploy/Dockerfile.web }
     image: rentops-web
@@ -41,6 +58,7 @@ services:
 
 volumes:
   pgdata:
+  ollama:
 
 networks:
   internal:
