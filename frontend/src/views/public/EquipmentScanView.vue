@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Banknote, CircleCheck, CircleX, Info, LoaderCircle, MapPin, ScanLine, Send, Smartphone, WandSparkles } from '@lucide/vue';
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
@@ -140,7 +140,7 @@ async function payWithMpesa() {
     // Nothing was charged: the form is invalid or the gateway refused before charging
     if (e instanceof ApiError && e.details) fieldErrors.value = e.details;
     submitError.value =
-      e instanceof ApiError && e.details ? 'Complete the highlighted fields, then tap "Pay now".' : e instanceof Error ? e.message : 'Could not start the payment';
+      e instanceof ApiError && e.details ? `Fix before paying — ${describeErrors(e.details)}` : e instanceof Error ? e.message : 'Could not start the payment';
   } finally {
     paying.value = false;
   }
@@ -165,7 +165,7 @@ async function submit() {
     await router.push({ name: 'request-status', params: { id: created.id } });
   } catch (e) {
     if (e instanceof ApiError && e.details) fieldErrors.value = e.details;
-    submitError.value = e instanceof ApiError && e.details ? 'Please correct the highlighted fields.' : e instanceof Error ? e.message : 'Could not submit the request';
+    submitError.value = e instanceof ApiError && e.details ? `Please fix — ${describeErrors(e.details)}` : e instanceof Error ? e.message : 'Could not submit the request';
   } finally {
     submitting.value = false;
   }
@@ -174,6 +174,29 @@ async function submit() {
 // "input" (style.css) includes min-w-0: native date inputs would otherwise overflow narrow phones
 const inputClass = 'input';
 const errorOf = (field: string) => fieldErrors.value[field]?.[0];
+
+/** Field names as the customer sees them on the form. */
+const FIELD_LABELS: Record<string, string> = {
+  companyName: 'Company / full name',
+  taxId: 'NUIT',
+  contactName: 'Contact person',
+  email: 'Email',
+  phone: 'Phone',
+  country: 'Country',
+  startDate: 'Start date',
+  endDate: 'End date',
+  intendedUse: 'Intended use',
+  paymentMethod: 'Payment method',
+  mpesaPhone: 'M-Pesa number',
+};
+
+/** Lists what is wrong (the fields may be off-screen) and scrolls to the first one. */
+function describeErrors(details: Record<string, string[]>) {
+  void nextTick(() => document.querySelector('form .text-rose-600')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  return Object.entries(details)
+    .map(([field, messages]) => `${FIELD_LABELS[field] ?? field}: ${messages[0]}`)
+    .join(' · ');
+}
 </script>
 
 <template>
