@@ -1,4 +1,9 @@
 import type { Request, Response } from 'express';
+import { buildReport, REPORT_TYPES } from '../services/report.service.js';
+import { staffOf } from '../middleware/auth.js';
+import { IdParam } from '../models/schemas.js';
+import { getStaffUser } from '../services/auth.service.js';
+import { listRefunds, markRefunded } from '../services/mpesa.service.js';
 import { z } from 'zod';
 import { orchestrator } from '../agents/orchestrator/Orchestrator.js';
 import { prisma } from '../database/prisma.js';
@@ -41,4 +46,27 @@ export async function monitoringStatus(_req: Request, res: Response) {
     select: { correlationId: true, startedAt: true, summary: true },
   });
   res.json({ running: orchestrator.isMonitoring, lastCycle: last });
+}
+
+/** M-Pesa deposits of rejected/cancelled requests: to refund in the M-Pesa portal, and already refunded. */
+export async function refunds(_req: Request, res: Response) {
+  res.json(await listRefunds());
+}
+
+/** Finance confirms it refunded the deposit in the M-Pesa portal (a person did it — so it is audited by name). */
+export async function markRefund(req: Request, res: Response) {
+  const { id } = IdParam.parse(req.params);
+  const { note } = z.object({ note: z.string().trim().max(500).optional() }).parse(req.body ?? {});
+  const actor = await getStaffUser(staffOf(res).sub);
+  res.json(await markRefunded(id, actor.email, note));
+}
+
+/** Management reports (financial, rentals, fleet, agents) for a date range; the dashboard exports them. */
+export async function report(req: Request, res: Response) {
+  const { type } = z.object({ type: z.enum(REPORT_TYPES) }).parse(req.params);
+  const { from, to } = z
+    .object({ from: z.iso.date(), to: z.iso.date() })
+    .refine((q) => q.to >= q.from, { message: '"to" must be on or after "from"', path: ['to'] })
+    .parse(req.query);
+  res.json(await buildReport(type, new Date(`${from}T00:00:00`), new Date(`${to}T00:00:00`)));
 }

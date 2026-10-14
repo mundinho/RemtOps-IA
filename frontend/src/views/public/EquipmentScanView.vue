@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Banknote, Info, LoaderCircle, MapPin, ScanLine, Send, WandSparkles } from '@lucide/vue';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { Banknote, Info, LoaderCircle, MapPin, ScanLine, Send, Smartphone, WandSparkles } from '@lucide/vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
@@ -76,12 +76,55 @@ function fillDemo(c: CustomerOption) {
   fieldErrors.value = {};
 }
 
+// ── M-Pesa: deposit paid before the request is sent ──
+const isMpesa = computed(() => form.paymentMethod === 'MPESA');
+const mpesaPhone = ref('');
+const mpesaCountry = ref('MZ');
+const deposit = computed(() => {
+  if (!equipment.value) return 0;
+  const value = Math.round(estimate.value * equipment.value.mpesa.depositPercent) / 100;
+  return equipment.value.mpesa.maxAmount ? Math.min(value, equipment.value.mpesa.maxAmount) : value;
+});
+// Defaults to the contact phone
+watch(isMpesa, (on) => {
+  if (on && !mpesaPhone.value) mpesaPhone.value = form.phone;
+});
+
+const checkout = ref<{ id: string; amount: number } | null>(null);
+let poll: ReturnType<typeof setInterval> | undefined;
+onUnmounted(() => clearInterval(poll));
+
+function followCheckout(id: string, amount: number) {
+  checkout.value = { id, amount };
+  poll = setInterval(async () => {
+    try {
+      const state = await publicApi.checkout(id);
+      if (state.status === 'SUCCESS' && state.rentalId) {
+        clearInterval(poll);
+        await router.push({ name: 'request-status', params: { id: state.rentalId } });
+      } else if (state.status === 'FAILED') {
+        clearInterval(poll);
+        checkout.value = null;
+        submitError.value = state.message ?? 'The M-Pesa payment did not go through. Please try again.';
+      }
+    } catch {
+      // keep polling; a transient network error must not lose the payment
+    }
+  }, 2500);
+}
+
 async function submit() {
   submitting.value = true;
   submitError.value = null;
   fieldErrors.value = {};
   try {
-    const created = await publicApi.createRequest(code, { ...form, intendedUse: form.intendedUse.trim() || undefined });
+    const payload = { ...form, intendedUse: form.intendedUse.trim() || undefined };
+    if (isMpesa.value) {
+      const started = await publicApi.mpesaCheckout(code, { ...payload, mpesaPhone: mpesaPhone.value });
+      followCheckout(started.checkoutId, started.amount);
+      return;
+    }
+    const created = await publicApi.createRequest(code, payload);
     await router.push({ name: 'request-status', params: { id: created.id } });
   } catch (e) {
     if (e instanceof ApiError && e.details) fieldErrors.value = e.details;
@@ -237,24 +280,50 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
               </span>
             </label>
           </div>
-          <p class="text-xs text-slate-400">Payment is due on the last rental day. Nothing is charged now.</p>
+          <p v-if="!isMpesa" class="text-xs text-slate-400">Payment is due on the last rental day. Nothing is charged now.</p>
+
+          <!-- M-Pesa: the deposit is paid before the request is sent -->
+          <div v-else class="space-y-3 rounded-lg border border-brand-200 bg-brand-50/60 p-3">
+            <div>
+              <span class="text-sm font-medium text-slate-700">M-Pesa number (Vodacom 84 / 85)</span>
+              <PhoneInput v-model="mpesaPhone" v-model:country="mpesaCountry" />
+              <span v-if="errorOf('mpesaPhone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('mpesaPhone') }}</span>
+              <span v-else class="mt-1 block text-xs text-slate-500">You confirm the payment on this phone with your M-Pesa PIN.</span>
+            </div>
+            <p class="text-xs text-slate-600">
+              A <span class="font-semibold">{{ equipment.mpesa.depositPercent }}% deposit</span> is paid now to submit the request; the balance is due on the
+              last rental day. If the request is not approved, the deposit is refunded.
+            </p>
+          </div>
         </fieldset>
 
-        <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
-          <span class="text-slate-500">Estimate · {{ days }} day{{ days === 1 ? '' : 's' }}</span>
-          <span class="font-semibold tabular-nums text-slate-900">{{ formatMoney(estimate) }}</span>
+        <div class="space-y-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Estimate · {{ days }} day{{ days === 1 ? '' : 's' }}</span>
+            <span class="font-semibold tabular-nums text-slate-900">{{ formatMoney(estimate) }}</span>
+          </div>
+          <div v-if="isMpesa" class="flex items-center justify-between border-t border-slate-200 pt-1">
+            <span class="font-medium text-brand-800">Pay now with M-Pesa</span>
+            <span class="font-semibold tabular-nums text-brand-800">{{ formatMoney(deposit) }}</span>
+          </div>
         </div>
 
         <p v-if="submitError" class="rounded-lg bg-rose-50 p-2.5 text-sm text-rose-700">{{ submitError }}</p>
 
-        <button
-          type="submit"
-          :disabled="submitting || !days"
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
-        >
+        <!-- Waiting for the PIN -->
+        <div v-if="checkout" class="flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
+          <LoaderCircle class="mt-0.5 size-5 shrink-0 animate-spin text-brand-600" />
+          <div class="text-sm">
+            <p class="font-semibold text-slate-900">Confirm {{ formatMoney(checkout.amount) }} on your phone</p>
+            <p class="mt-0.5 text-slate-600">Enter your M-Pesa PIN. Your request is sent as soon as the payment is confirmed.</p>
+          </div>
+        </div>
+
+        <button v-else type="submit" :disabled="submitting || !days" class="btn-primary w-full py-2.5">
           <LoaderCircle v-if="submitting" class="size-4 animate-spin" />
+          <Smartphone v-else-if="isMpesa" class="size-4" />
           <Send v-else class="size-4" />
-          Submit rental request
+          {{ isMpesa ? `Pay ${formatMoney(deposit)} with M-Pesa and submit` : 'Submit rental request' }}
         </button>
         <p class="text-center text-xs text-slate-400">
           Availability, maintenance, documents, risk and payments are checked automatically by our agents.

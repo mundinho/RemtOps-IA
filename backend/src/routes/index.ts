@@ -25,7 +25,8 @@ router.get('/public/equipment/:code', publicApi.equipment);
 router.post('/public/equipment/:code/rental-requests', optionalCustomer, publicApi.createRequest);
 router.post('/public/equipment/:code/assistant', publicApi.assistant);
 router.get('/public/rental-requests/:id', publicApi.requestStatus);
-router.post('/public/rental-requests/:id/mpesa', publicApi.payMpesa);
+router.post('/public/equipment/:code/mpesa-checkout', optionalCustomer, publicApi.mpesaCheckout);
+router.get('/public/mpesa-checkouts/:id', publicApi.checkoutStatus);
 router.get('/public/demo-customers', publicApi.demoCustomers);
 // QR label image — loaded by <img>, which cannot send a token
 router.get('/equipment/:code/qr', equipment.qrCode);
@@ -66,6 +67,9 @@ router.get('/alerts', observability.alerts);
 router.get('/payments', operations.payments);
 router.get('/finance/summary', operations.financeSummary);
 router.get('/maintenance-orders', operations.maintenanceOrders);
+router.get('/refunds', operations.refunds);
+router.get('/reports/:type', operations.report);
+router.post('/refunds/:id/mark-refunded', operations.markRefund);
 
 // Proactive monitoring
 router.post('/monitoring/run', operations.runMonitoring);

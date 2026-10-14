@@ -85,13 +85,7 @@ const inProgress = computed(() => request.value && ['REQUESTED', 'IN_REVIEW'].in
         </div>
       </section>
 
-      <MpesaDepositCard
-        v-if="request.mpesa.available"
-        :rental-id="request.id"
-        :deposit="request.mpesa"
-        :total="request.totalAmount"
-        @changed="refresh({ silent: true })"
-      />
+      <MpesaDepositCard v-if="request.mpesa" :deposit="request.mpesa" :total="request.totalAmount" />
 
       <section v-if="inProgress" class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <ol class="space-y-3">

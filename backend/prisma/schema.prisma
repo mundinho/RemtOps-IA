@@ -75,6 +75,11 @@ enum PaymentMethod {
   CASH
 }
 
+enum PaymentKind {
+  DEPOSIT
+  BALANCE
+}
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -449,8 +454,12 @@ enum MpesaStatus {
 /// Kept in full for audit — what was asked, what Vodacom answered.
 model MpesaTransaction {
   id                    String      @id @default(cuid())
-  rentalId              String
-  rental                Rental      @relation(fields: [rentalId], references: [id])
+  /// Set once the paid request has been created (the deposit is charged BEFORE the request exists)
+  rentalId              String?
+  rental                Rental?     @relation(fields: [rentalId], references: [id])
+  /// Equipment and the QR form as submitted — the request is created from it when the payment succeeds
+  equipmentCode         String?
+  requestPayload        Json?
   /// 258XXXXXXXXX
   msisdn                String
   amount                Decimal     @db.Decimal(12, 2)
@@ -465,6 +474,10 @@ model MpesaTransaction {
   responseDesc          String?
   /// The Payment (PAID) recorded when it succeeded
   paymentReference      String?
+  /// Manual refund (the request was rejected after the customer paid): done by finance in the M-Pesa portal
+  refundedAt            DateTime?
+  refundedBy            String?
+  refundNote            String?
   createdAt             DateTime    @default(now())
   completedAt           DateTime?
 
@@ -484,6 +497,8 @@ model Payment {
   status     PaymentStatus  @default(PENDING)
   paidAt     DateTime?
   method     PaymentMethod?
+  /// DEPOSIT = paid up front (M-Pesa, before the request); BALANCE = what is still owed after approval
+  kind       PaymentKind    @default(BALANCE)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 

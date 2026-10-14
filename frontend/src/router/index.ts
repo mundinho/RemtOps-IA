@@ -28,6 +28,7 @@ export const router = createRouter({
         { path: 'alerts', name: 'alerts', component: () => import('@/views/dashboard/AlertsView.vue') },
         { path: 'rentals', name: 'rentals', component: () => import('@/views/dashboard/RentalsView.vue') },
         { path: 'statistics', name: 'statistics', component: () => import('@/views/dashboard/StatisticsView.vue') },
+        { path: 'reports', name: 'reports', component: () => import('@/views/dashboard/ReportsView.vue') },
         { path: 'agents', name: 'agents', component: () => import('@/views/dashboard/AgentActivityView.vue') },
         { path: 'decisions', name: 'decisions', component: () => import('@/views/dashboard/AiDecisionsView.vue') },
         { path: 'qr-codes', name: 'qr-codes', component: () => import('@/views/dashboard/QrCodesView.vue') },

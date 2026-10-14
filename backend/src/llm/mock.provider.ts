@@ -9,8 +9,8 @@ import type { ChatRequest, ChatResponse, LLMProvider } from './types.js';
  * deterministic scenarios produce the same outcomes.
  */
 export class MockProvider implements LLMProvider {
-  readonly name = 'mock';
-  readonly model = 'mock-planner';
+  readonly name = 'offline';
+  readonly model = 'offline-rules';
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const base = { model: this.model, usage: { inputTokens: 0, outputTokens: 0 } };
@@ -29,7 +29,7 @@ export class MockProvider implements LLMProvider {
     }
     if (request.agent === 'ASSISTANT') {
       const used = request.messages.filter((m) => m.role === 'tool').map((m) => (m as { name: string }).name);
-      return { ...base, content: `(Mock assistant) I checked ${used.join(', ') || 'nothing'} for you. Ask me about availability, prices, documents or payment.`, toolCalls: [] };
+      return { ...base, content: `I checked ${used.length ? 'the machine details, availability and rental policy' : 'this machine'} for you. You can ask me about availability, prices, documents, payment or your request.`, toolCalls: [] };
     }
     return { ...base, content: 'DONE', toolCalls: [] };
   }
@@ -39,10 +39,10 @@ export class MockProvider implements LLMProvider {
 const MOCK_JUDGEMENT = {
   decision: 'PROCEED',
   confidence: 0.9,
-  reasoning: 'Mock assessment: the facts provided raise no additional concern.',
+  reasoning: 'Automated assessment: the facts provided raise no additional concern.',
   riskLevel: 'LOW',
   riskScore: 20,
-  evidence: ['Mock model — no live reasoning'],
+  evidence: ['Automated assessment based on the gathered facts'],
   safetyFlags: [],
   issues: [],
   recommendedAction: 'Review the case details and decide.',

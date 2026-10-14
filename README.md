@@ -21,6 +21,8 @@ agentes fizeram, porquê e com que dados.
 | **Assistente de cliente** | Chatbot nas páginas do QR que responde só com dados reais (disponibilidade, preços, documentos, estado do pedido). Não pode decidir nada |
 | **Contas de cliente** | Autorregisto validado por um **Onboarding Agent**, portal do cliente e formulário do QR pré-preenchido |
 | **Dashboard da equipa** | Login com papéis (Admin / Operator): atividade dos agentes, decisões da IA, alertas, alugueres, clientes, frota, manutenção, finanças, estatísticas, etiquetas QR, utilizadores |
+| **Pagamentos M-Pesa** | Quem escolhe M-Pesa paga o sinal antes de enviar o pedido (PIN no telemóvel); pedidos recusados aparecem nas Finanças para reembolso |
+| **Relatórios** | Financeiro, Alugueres, Frota e manutenção, Agentes de IA — por período, no ecrã, em Excel (CSV) e PDF |
 | **Rastreabilidade** | Cada execução de agente, cada ferramenta chamada (incluindo as recusadas), cada decisão e cada alteração de estado ficam registadas e visíveis |
 
 ## Onde está a IA (e onde não está)

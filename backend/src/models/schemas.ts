@@ -172,7 +172,10 @@ export const AuditListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(100),
 });
 
-/** M-Pesa deposit: the phone that will confirm the payment with its PIN. */
-export const MpesaPaymentSchema = z.object({
-  phone: z.string().trim().min(9, 'Phone number is required').max(20),
+/**
+ * M-Pesa checkout: the QR form (validated as a RentalRequest when the checkout starts) plus the
+ * Vodacom number that confirms the deposit with its PIN.
+ */
+export const MpesaCheckoutSchema = z.looseObject({
+  mpesaPhone: z.string().trim().min(9, 'M-Pesa number is required').max(20),
 });

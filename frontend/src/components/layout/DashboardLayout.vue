@@ -7,6 +7,7 @@ import {
   Construction,
   Cpu,
   Eye,
+  FileText,
   Gavel,
   Hammer,
   LayoutDashboard,
@@ -50,6 +51,7 @@ const groups = computed<{ label: string; items: NavItem[] }[]>(() => [
     items: [
       { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
       { to: '/dashboard/statistics', label: 'Statistics', icon: ChartColumn },
+      { to: '/dashboard/reports', label: 'Reports', icon: FileText },
       { to: '/dashboard/agents', label: 'Agent Activity', icon: Activity },
       { to: '/dashboard/decisions', label: 'AI Decisions', icon: Gavel },
       { to: '/dashboard/alerts', label: 'Alerts & Notifications', icon: Bell, badge: overview.value?.kpis.openAlerts || undefined, badgeTone: 'bg-rose-500' },

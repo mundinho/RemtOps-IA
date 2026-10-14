@@ -356,6 +356,8 @@ export interface PublicEquipment {
   location: string | null;
   dailyRate: number;
   requiresOperatorLicense: boolean;
+  /** Share of the total charged up front by M-Pesa (and optional cap per transaction). */
+  mpesa: { depositPercent: number; maxAmount: number | null };
 }
 
 export interface RentalRequestPayload {
@@ -394,7 +396,7 @@ export interface RequestStatus {
   customer: { companyName: string };
   createdAt: string;
   updatedAt: string;
-  mpesa: MpesaDeposit;
+  mpesa: RentalDeposit | null;
 }
 
 export type CustomerDocumentType = 'ID_DOCUMENT' | 'INSURANCE_CERTIFICATE' | 'OPERATOR_LICENSE' | 'COMPANY_REGISTRATION';
@@ -517,12 +519,46 @@ export interface Statistics {
   agents: (StatPoint & { runs: number; tokens: number })[];
 }
 
-/** M-Pesa deposit for an approved rental (request status page). */
-export interface MpesaDeposit {
-  available: boolean;
-  depositPercent: number;
-  amount: number;
+/** Deposit paid with M-Pesa before the request was submitted (request status page). */
+export interface RentalDeposit {
+  amount: number | null;
+  transactionId: string | null;
+  paidAt: string | null;
+  /** Set when the request was rejected/cancelled: the deposit is refunded manually by finance. */
+  refund: { refundedAt: string | null } | null;
   simulated: boolean;
-  paid: { amount: number | null; transactionId: string | null; at: string | null } | null;
-  lastAttempt: { status: 'PENDING' | 'SUCCESS' | 'FAILED'; message: string | null; at: string } | null;
+}
+
+/** M-Pesa checkout, polled while the customer confirms with their PIN. */
+export interface MpesaCheckout {
+  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  amount: number | null;
+  rentalId: string | null;
+  transactionId: string | null;
+  message: string | null;
+}
+
+export interface MpesaRefund {
+  id: string;
+  amount: number | null;
+  msisdn: string;
+  transactionId: string | null;
+  paidAt: string | null;
+  rental: { id: string; code: string; decisionReason: string | null; customer: { code: string; companyName: string } } | null;
+  refundedAt: string | null;
+  refundedBy: string | null;
+  refundNote: string | null;
+}
+
+export type ReportType = 'financial' | 'rentals' | 'fleet' | 'agents';
+export type ReportFormat = 'money' | 'number' | 'percent' | 'seconds' | 'text' | 'date';
+
+export interface Report {
+  type: ReportType;
+  title: string;
+  period: { from: string; to: string; days: number };
+  generatedAt: string;
+  kpis: { label: string; value: number | string; format: ReportFormat; hint?: string }[];
+  breakdowns: { title: string; format: ReportFormat; items: { label: string; value: number }[] }[];
+  table: { columns: { key: string; label: string; format?: ReportFormat }[]; rows: Record<string, string | number | null>[] };
 }

@@ -32,22 +32,31 @@ export async function getCustomerPaymentSummary(customerId: string) {
   };
 }
 
-/** One payment per rental, due on the last rental day. Idempotent: returns the existing one if present. */
+/**
+ * The balance of a rental (total minus any deposit already paid up front), due on the last rental day.
+ * Idempotent: returns the existing balance payment if present.
+ */
 export async function createPaymentForRental(rentalId: string) {
-  const existing = await prisma.payment.findFirst({ where: { rentalId } });
+  const existing = await prisma.payment.findFirst({ where: { rentalId, kind: 'BALANCE' } });
   if (existing) return { ...existing, amount: Number(existing.amount), created: false };
 
   const rental = await prisma.rental.findUnique({ where: { id: rentalId } });
   if (!rental) throw notFound('Rental');
+
+  const deposits = await prisma.payment.aggregate({ where: { rentalId, kind: 'DEPOSIT', status: 'PAID' }, _sum: { amount: true } });
+  const balance = Math.max(0, Number(rental.totalAmount) - Number(deposits._sum.amount ?? 0));
 
   const payment = await prisma.payment.create({
     data: {
       reference: await nextPaymentReference(),
       rentalId,
       customerId: rental.customerId,
-      amount: rental.totalAmount,
+      amount: balance,
       dueDate: rental.endDate,
       method: rental.paymentMethod, // as chosen by the customer in the QR form
+      kind: 'BALANCE',
+      // Fully paid up front: nothing left to collect
+      ...(balance === 0 && { status: 'PAID' as const, paidAt: new Date() }),
     },
   });
   return { ...payment, amount: Number(payment.amount), created: true };

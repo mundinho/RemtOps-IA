@@ -1,4 +1,4 @@
-import type { ChatTurn, CustomerOption, PublicEquipment, RentalRequestCreated, RentalRequestPayload, RequestStatus } from '@/types';
+import type { ChatTurn, CustomerOption, MpesaCheckout, PublicEquipment, RentalRequestCreated, RentalRequestPayload, RequestStatus } from '@/types';
 import { http } from './http';
 
 export const publicApi = {
@@ -9,11 +9,13 @@ export const publicApi = {
       body: JSON.stringify(payload),
     }),
   requestStatus: (id: string) => http<RequestStatus>(`/public/rental-requests/${id}`),
-  payMpesa: (id: string, phone: string) =>
-    http<{ status: 'PENDING'; amount: number; message: string }>(`/public/rental-requests/${id}/mpesa`, {
+  /** Pays the M-Pesa deposit; the request is created once the customer confirms with their PIN. */
+  mpesaCheckout: (code: string, payload: RentalRequestPayload & { mpesaPhone: string }) =>
+    http<{ checkoutId: string; status: 'PENDING'; amount: number; total: number }>(`/public/equipment/${code}/mpesa-checkout`, {
       method: 'POST',
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify(payload),
     }),
+  checkout: (id: string) => http<MpesaCheckout>(`/public/mpesa-checkouts/${id}`),
   assistant: (code: string, messages: ChatTurn[], rentalId?: string) =>
     http<{ reply: string; toolsUsed: string[] }>(`/public/equipment/${code}/assistant`, {
       method: 'POST',

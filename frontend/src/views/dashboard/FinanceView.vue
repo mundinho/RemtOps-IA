@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Banknote, CircleCheck, Hourglass, Wallet } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import RefundsPanel from '@/components/rentals/RefundsPanel.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
 import DataTable, { type Column } from '@/components/ui/DataTable.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
@@ -49,6 +50,8 @@ const columns: Column[] = [
     <KpiCard label="Outstanding total" :value="formatMoney(summary.overdueAmount + summary.pendingAmount)" :icon="Wallet" />
     <KpiCard label="Collected (30 days)" :value="formatMoney(summary.collectedLast30Days)" :icon="CircleCheck" tone="green" />
   </div>
+
+  <div class="mb-6"><RefundsPanel /></div>
 
   <div class="mb-4 flex flex-wrap gap-1.5">
     <button
