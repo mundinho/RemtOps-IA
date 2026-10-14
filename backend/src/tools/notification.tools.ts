@@ -3,6 +3,8 @@ import { prisma } from '../database/prisma.js';
 import * as monitoringService from '../services/monitoring.service.js';
 import * as notificationService from '../services/notification.service.js';
 import { BUSINESS_RULES } from '../config/businessRules.js';
+import { env } from '../config/env.js';
+import { toSmsText } from '../sms/gateway.js';
 import { defineTool, type ToolContext } from './types.js';
 
 const OPERATIONS_INBOX = 'operations@rentops.local';
@@ -50,20 +52,46 @@ export const createNotification = defineTool({
     const { customerId, rentalId } = await notificationTargets(ctx, { customerCode, rentalCode });
     if (audience === 'CUSTOMER' && !customerId) throw new Error('A customer notification needs a customer');
 
-    // The recipient is resolved from the database, never chosen by the model.
-    const recipient =
-      audience === 'CUSTOMER'
-        ? (await prisma.customer.findUniqueOrThrow({ where: { id: customerId! }, select: { email: true } })).email
-        : OPERATIONS_INBOX;
+    // Recipients are resolved from the database (or configuration), never chosen by the model.
+    if (audience === 'OPERATIONS') {
+      const notification = await notificationService.createNotification({
+        ...message,
+        channel: env.OPERATIONS_EMAIL ? 'EMAIL' : 'INTERNAL',
+        recipient: env.OPERATIONS_EMAIL || OPERATIONS_INBOX,
+        rentalId,
+        customerId,
+      });
+      return { id: notification.id, recipient: notification.recipient, priority: notification.priority, created: notification.created };
+    }
 
+    const customer = await prisma.customer.findUniqueOrThrow({ where: { id: customerId! }, select: { email: true, phone: true } });
     const notification = await notificationService.createNotification({
       ...message,
-      channel: audience === 'CUSTOMER' ? 'EMAIL' : 'INTERNAL',
-      recipient,
+      channel: 'EMAIL',
+      recipient: customer.email,
       rentalId,
       customerId,
     });
-    return { id: notification.id, recipient, priority: notification.priority, created: notification.created };
+
+    // Plus one short SMS (one credit) pointing to the full message, when the customer has a phone.
+    let sms: { id: string; status: string } | undefined;
+    if (customer.phone) {
+      const link = rentalId ? `${env.FRONTEND_URL.replace(/\/$/, '')}/requests/${rentalId}` : undefined;
+      const text = toSmsText(message.subject, link);
+      const created = await notificationService.createNotification({
+        type: message.type,
+        priority: message.priority,
+        channel: 'SMS',
+        recipient: customer.phone,
+        subject: message.subject,
+        body: text,
+        rentalId,
+        customerId,
+        dedupeKey: message.dedupeKey ? `${message.dedupeKey}:SMS` : undefined,
+      });
+      sms = { id: created.id, status: created.status };
+    }
+    return { id: notification.id, recipient: customer.email, priority: notification.priority, created: notification.created, sms };
   },
 });
 

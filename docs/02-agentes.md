@@ -152,7 +152,7 @@ inteiro e decide `APPROVE` (opcionalmente com **condições**) ou `REJECT`.
 - **Modo monitorização:** lembretes de devolução, avisos de atraso e um resumo para a operação **por ordem
   de prioridade**. `HIGH`/`CRITICAL` são enviados um a um e o resto num único resumo, para não cansar quem
   lê. Cada notificação tem uma chave de deduplicação.
-- As notificações são **simuladas** (estado `SIMULATED`): ficam registadas, mas não se envia email nem SMS.
+- **Canais:** cada notificação a um cliente segue por **email** (SMTP) e, se o cliente tiver telefone, por um **SMS** curto (MozeSMS, até 160 caracteres sem acentos = 1 crédito) com o link para o pedido. Sem configuração, ambos ficam `SIMULATED`. O resultado (`SENT`/`FAILED` + motivo) fica registado e visível em Alerts & Notifications. Uma falha do gateway nunca interrompe um agente.
 
 ### Onboarding Agent — registo de clientes
 Valida cada **autorregisto** de cliente. **0% humano.**

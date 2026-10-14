@@ -91,8 +91,8 @@ const expanded = ref<string | null>(null);
         <header class="flex flex-wrap items-center gap-2">
           <StatusBadge :status="n.priority" :label="`${n.priority.charAt(0)}${n.priority.slice(1).toLowerCase()} priority`" />
           <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">{{ n.type }}</span>
-          <span class="text-xs text-slate-400">{{ n.channel === 'EMAIL' ? 'Email' : 'Internal' }} → {{ n.recipient }}</span>
-          <span class="ml-auto text-xs text-slate-400">{{ formatDateTime(n.createdAt) }} · simulated</span>
+          <span class="text-xs text-slate-400">{{ n.channel === 'EMAIL' ? 'Email' : n.channel === 'SMS' ? 'SMS' : 'Internal' }} → {{ n.recipient }}</span>
+          <span class="ml-auto flex items-center gap-2 text-xs text-slate-400">{{ formatDateTime(n.createdAt) }} <StatusBadge :status="n.status" /></span>
         </header>
         <p class="mt-2 text-sm font-medium text-slate-900">{{ n.subject }}</p>
         <p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ n.body }}</p>

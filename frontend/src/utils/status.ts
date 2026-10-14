@@ -50,6 +50,9 @@ const STATUS_META: Record<string, { label: string; tone: Tone }> = {
   IN_PROGRESS: { label: 'In progress', tone: 'blue' },
   ACKNOWLEDGED: { label: 'Acknowledged', tone: 'slate' },
   RESOLVED: { label: 'Resolved', tone: 'green' },
+  // Notification delivery
+  SENT: { label: 'Sent', tone: 'green' },
+  SIMULATED: { label: 'Simulated', tone: 'slate' },
   // Customer documents
   VALID: { label: 'Valid', tone: 'green' },
   EXPIRED: { label: 'Expired', tone: 'red' },

@@ -108,7 +108,7 @@ Agent, o mais recente, foi feito assim: regras, classe, permissões, um evento e
 
 | Limitação | Próximo passo |
 |---|---|
-| As notificações são simuladas | Integrar email/SMS (por exemplo Twilio, ou um gateway SMS local) e M-Pesa |
+| Email e SMS dependem de configuração (SMTP, MozeSMS); sem ela ficam simulados | Integrar pagamentos M-Pesa/e-Mola |
 | O levantamento e a devolução da máquina não têm ecrã (`ACTIVE`/`COMPLETED` só nos dados de demonstração) | Fluxo de levantamento e devolução, com a leitura do contador e os danos |
 | Os documentos são validados pelo admin, não por fotografia | **Document Agent** com modelo de visão (já reservado no modelo de dados) |
 | Event bus em memória | Fila persistente (BullMQ/Redis, SQS) |

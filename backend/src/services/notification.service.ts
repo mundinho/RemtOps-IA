@@ -1,6 +1,7 @@
 import type { NotificationChannel, NotificationType, Severity } from '@prisma/client';
 import { prisma } from '../database/prisma.js';
 import { emailGateway } from '../email/gateway.js';
+import { smsGateway } from '../sms/gateway.js';
 
 const PRIORITY_ORDER: Severity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 
@@ -17,7 +18,8 @@ export async function listNotifications(limit = 200) {
 }
 
 /**
- * Stores the notification, then delivers EMAIL ones through the email gateway (SMS stays simulated).
+ * Stores the notification, then delivers it: EMAIL through the email gateway, SMS through the SMS
+ * gateway (the body is the SMS text). INTERNAL ones stay in the dashboard.
  * The outcome is recorded on the row: SENT (+ message id), FAILED (+ reason) or SIMULATED.
  * A deduplicated notification is never sent twice.
  */
@@ -37,9 +39,12 @@ export async function createNotification(data: {
     if (existing) return { ...existing, created: false };
   }
   const notification = await prisma.notification.create({ data: { ...data, status: 'SIMULATED' } });
-  if (data.channel !== 'EMAIL') return { ...notification, created: true };
+  if (data.channel === 'INTERNAL') return { ...notification, created: true };
 
-  const delivery = await emailGateway.send({ to: data.recipient, subject: data.subject, text: data.body });
+  const delivery =
+    data.channel === 'EMAIL'
+      ? await emailGateway.send({ to: data.recipient, subject: data.subject, text: data.body })
+      : await smsGateway.send({ to: data.recipient, text: data.body });
   if (delivery.status === 'SIMULATED') return { ...notification, created: true };
 
   const delivered = await prisma.notification.update({
@@ -49,6 +54,6 @@ export async function createNotification(data: {
         ? { status: 'SENT', sentAt: delivery.sentAt, providerMessageId: delivery.messageId }
         : { status: 'FAILED', deliveryError: delivery.error.slice(0, 500) },
   });
-  if (delivery.status === 'FAILED') console.error(`[email] ${data.recipient}: ${delivery.error}`);
+  if (delivery.status === 'FAILED') console.error(`[${data.channel.toLowerCase()}] ${data.recipient}: ${delivery.error}`);
   return { ...delivered, created: true };
 }

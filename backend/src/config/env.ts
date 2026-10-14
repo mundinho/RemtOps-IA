@@ -34,6 +34,18 @@ const EnvSchema = z.object({
   EMAIL_FROM: z.string().default('RentOps <no-reply@rentops.local>'),
   // Optional: also email the operations notifications (otherwise they stay internal, in the dashboard).
   OPERATIONS_EMAIL: z.union([z.email(), z.literal('')]).default(''),
+
+  // SMS gateway. "simulated" stores SMS without sending (the default); "mozesms" sends through MozeSMS
+  // (https://api.mozesms.com, X-API-Key + X-API-Secret). Every SMS costs credits.
+  SMS_PROVIDER: z.enum(['simulated', 'mozesms']).default('simulated'),
+  MOZESMS_BASE_URL: z.string().default('https://api.mozesms.com'),
+  MOZESMS_API_KEY: z.string().default(''),
+  MOZESMS_API_SECRET: z.string().default(''),
+  // Must be approved by MozeSMS; empty = their default sender ("MozeSMS").
+  SMS_SENDER_ID: z.string().max(11).default(''),
+  // Optional safety net: comma-separated numbers (e.g. 258841234567). When set, only these receive real
+  // SMS — everyone else stays simulated (useful with demo data, whose numbers may belong to real people).
+  SMS_ALLOWLIST: z.string().default(''),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

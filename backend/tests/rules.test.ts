@@ -8,6 +8,7 @@ import { financeCheckRules } from '../src/agents/finance/rules.js';
 import { planFleetMaintenance, type FleetItem } from '../src/agents/maintenance/monitoringRules.js';
 import { maintenanceRules } from '../src/agents/maintenance/rules.js';
 import { onboardingRules, type RegistrationFacts } from '../src/agents/onboarding/rules.js';
+import { normalizePhone, toSmsText } from '../src/sms/gateway.js';
 import { detectAnomalies } from '../src/agents/risk/RiskMonitor.js';
 import { riskRules } from '../src/agents/risk/rules.js';
 
@@ -248,5 +249,22 @@ describe('Onboarding rules — self-registration', () => {
   it('rejects blocked customers and disposable inboxes', () => {
     expect(rulesFor({ existingRecord: { ...record, isBlocked: true } })).toEqual(['customer.blocked']);
     expect(rulesFor({ submitted: { ...submitted, email: 'x@mailinator.com' } })).toEqual(['email.disposable']);
+  });
+});
+
+describe('SMS formatting — one credit per message', () => {
+  it('normalises phone numbers to MozeSMS international digits', () => {
+    expect(normalizePhone('+258 84 123 4567')).toBe('258841234567');
+    expect(normalizePhone('841234567')).toBe('258841234567');
+    expect(normalizePhone('+27 82 555 1234')).toBe('27825551234');
+  });
+
+  it('keeps SMS in GSM-7 (no accents) and within 160 characters, link intact', () => {
+    const link = 'https://rentops.mozweb.site/requests/cmv7pr3fc0003uj2slchp1sxb';
+    const text = toSmsText('Pedido aprovado — Escavadora CAT 320, condições: apresentar seguro válido antes do levantamento da máquina', link);
+    expect(text.length).toBeLessThanOrEqual(160);
+    expect(text).toMatch(/^RentOps: Pedido aprovado - Escavadora/);
+    expect(text.endsWith(link)).toBe(true);
+    expect(/[^\x20-\x7E\n]/.test(text)).toBe(false);
   });
 });

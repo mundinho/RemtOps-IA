@@ -72,6 +72,12 @@ codes funcionarem em qualquer rede) e abre o browser no dashboard.
 | `MONITORING_INTERVAL_MS` | `900000` (15 min) | Intervalo do ciclo de monitorização; `0` desliga o agendador |
 | `AUTH_SECRET` | segredo de demonstração | Assina os tokens de sessão. **Muda-o fora da máquina local** (mínimo 16 caracteres) |
 | `AUTH_TOKEN_TTL_HOURS` | `12` | Validade da sessão |
+| `EMAIL_PROVIDER` | `simulated` | `simulated` ou `smtp` (com `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`) |
+| `OPERATIONS_EMAIL` | vazio | Se definido, as notificações para a operação também seguem por email |
+| `SMS_PROVIDER` | `simulated` | `simulated` ou `mozesms` (gateway moçambicano MozeSMS) |
+| `MOZESMS_API_KEY` / `MOZESMS_API_SECRET` | vazio | Chaves do painel MozeSMS (**nunca no Git**) |
+| `SMS_SENDER_ID` | vazio | Remetente aprovado pela MozeSMS; vazio = "MozeSMS" |
+| `SMS_ALLOWLIST` | vazio | Números separados por vírgulas; se definido, só estes recebem SMS reais |
 
 ### Escolher o LLM
 
@@ -123,6 +129,7 @@ npx tsx scripts/llm-smoke-test.ts EQP-002
 | `npm run auth:demo-accounts` | Cria ou atualiza as contas de demonstração **sem apagar dados** |
 | `npx tsx scripts/run-scenarios.ts` | Corre os 8 cenários de demonstração de ponta a ponta (ver abaixo) |
 | `npx tsx scripts/try-assistant.ts EQP-001` | Faz algumas perguntas ao assistente de cliente |
+| `npm run sms:test` | Mostra o fornecedor de SMS e o saldo (não envia nada); `npm run sms:test -- 2588…` envia 1 SMS de teste |
 
 ## Dados e cenários de demonstração
 
