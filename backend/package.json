@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "auth:demo-accounts": "tsx scripts/create-demo-accounts.ts",
     "sms:test": "tsx scripts/sms-test.ts",
+    "mpesa:test": "tsx scripts/mpesa-test.ts",
     "test": "vitest run"
   },
   "prisma": {

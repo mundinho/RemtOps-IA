@@ -78,7 +78,8 @@ codes funcionarem em qualquer rede) e abre o browser no dashboard.
 | `MOZESMS_API_KEY` / `MOZESMS_API_SECRET` | vazio | Chaves do painel MozeSMS (**nunca no Git**) |
 | `SMS_SENDER_ID` | vazio | Remetente aprovado pela MozeSMS; vazio = "MozeSMS" |
 | `SMS_ALLOWLIST` | vazio | Números separados por vírgulas; se definido, só estes recebem SMS reais |
-| `MPESA_PROVIDER` | `simulated` | `simulated` (nenhum dinheiro se move) ou `vodacom` (cobranças reais) |
+| `MPESA_PROVIDER` | `simulated` | `simulated` (nenhum dinheiro se move), `emedx` (cobranças reais pelo gateway **Emedx Pay**) ou `vodacom` (conta M-Pesa própria) |
+| `EMEDX_CLIENT_KEY` / `EMEDX_CLIENT_SECRET` | vazio | Credencial gerada no painel manage.payments.emedx.co.mz → Chaves de API (**nunca no Git**) |
 | `MPESA_API_KEY` / `MPESA_PUBLIC_KEY` | vazio | Chave da API e chave pública do portal developer.mpesa.vm.co.mz (**nunca no Git**) |
 | `MPESA_SERVICE_PROVIDER_CODE` | vazio | Shortcode da organização que recebe o dinheiro |
 | `MPESA_DEPOSIT_PERCENT` / `MPESA_MAX_AMOUNT` | `10` / `0` | Sinal cobrado por M-Pesa (% do total) e limite opcional por transação (MZN) |
@@ -133,6 +134,7 @@ npx tsx scripts/llm-smoke-test.ts EQP-002
 | `npm run auth:demo-accounts` | Cria ou atualiza as contas de demonstração **sem apagar dados** |
 | `npx tsx scripts/run-scenarios.ts` | Corre os 8 cenários de demonstração de ponta a ponta (ver abaixo) |
 | `npx tsx scripts/try-assistant.ts EQP-001` | Faz algumas perguntas ao assistente de cliente |
+| `npm run mpesa:test` | Mostra o gateway M-Pesa e o saldo; `npm run mpesa:test -- 84XXXXXXX 1` cobra 1 MZN a esse número (PIN no telemóvel) |
 | `npm run sms:test` | Mostra o fornecedor de SMS e o saldo (não envia nada); `npm run sms:test -- 2588…` envia 1 SMS de teste |
 
 ## Dados e cenários de demonstração

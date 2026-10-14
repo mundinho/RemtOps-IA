@@ -1,5 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { env } from '../src/config/env.js';
 import { approvalRules } from '../src/agents/approval/rules.js';
 import { periodMentionedIn } from '../src/agents/assistant/CustomerAssistant.js';
 import { neutraliseAccusations } from '../src/agents/core/languageGuard.js';
@@ -10,7 +11,7 @@ import { planFleetMaintenance, type FleetItem } from '../src/agents/maintenance/
 import { maintenanceRules } from '../src/agents/maintenance/rules.js';
 import { onboardingRules, type RegistrationFacts } from '../src/agents/onboarding/rules.js';
 import { RentalRequestSchema } from '../src/models/schemas.js';
-import { bearerToken } from '../src/payments/mpesa.js';
+import { bearerToken, EmedxMpesa } from '../src/payments/mpesa.js';
 import { depositAmount, mpesaMsisdn } from '../src/services/mpesa.service.js';
 import { normalizePhone, toSmsText } from '../src/sms/gateway.js';
 import { detectAnomalies } from '../src/agents/risk/RiskMonitor.js';
@@ -312,5 +313,40 @@ describe('M-Pesa deposit', () => {
     expect(Buffer.from(token, 'base64')).toHaveLength(256);
     const pem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
     expect(Buffer.from(bearerToken('test-api-key', pem), 'base64')).toHaveLength(256); // PEM accepted too
+  });
+});
+
+describe('Emedx Pay gateway — reading its answers', () => {
+  const reply = (status: number, body: unknown) => vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
+  const request = { msisdn: '258845916612', amount: 1, transactionReference: 'TEST1', thirdPartyReference: 'TEST1' };
+  const gateway = () => {
+    Object.assign(env, { EMEDX_CLIENT_KEY: 'ck_test', EMEDX_CLIENT_SECRET: 'cs_test' });
+    return new EmedxMpesa();
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('COMPLETED → paid, with the M-Pesa transaction id', async () => {
+    vi.stubGlobal('fetch', reply(200, { id: 'uuid-1', status: 'COMPLETED', mpesaTransactionId: 'DH96L58FS9A', mpesaResponseCode: 'INS-0', mpesaResponseDesc: 'ok' }));
+    expect(await gateway().c2b(request)).toMatchObject({ ok: true, transactionId: 'DH96L58FS9A', conversationId: 'uuid-1' });
+  });
+
+  it('CANCELLED on the phone → not paid, INS-5', async () => {
+    vi.stubGlobal('fetch', reply(200, { id: 'uuid-2', status: 'CANCELLED', mpesaTransactionId: null, mpesaResponseCode: 'INS-5', mpesaResponseDesc: 'cancelled' }));
+    expect(await gateway().c2b(request)).toMatchObject({ ok: false, code: 'INS-5' });
+  });
+
+  it('rejected credentials → not paid, with the gateway message', async () => {
+    vi.stubGlobal('fetch', reply(403, { status: 403, message: 'IP_NOT_ALLOWED' }));
+    expect(await gateway().c2b(request)).toMatchObject({ ok: false, code: 'HTTP-403', description: 'IP_NOT_ALLOWED' });
+  });
+
+  it('sends the documented headers and body', async () => {
+    const fetchMock = reply(200, { id: 'u', status: 'COMPLETED', mpesaTransactionId: 'X', mpesaResponseCode: 'INS-0', mpesaResponseDesc: '' });
+    vi.stubGlobal('fetch', fetchMock);
+    await gateway().c2b(request);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toBe('https://api.payments.emedx.co.mz/api/v1/payments/c2b');
+    expect(init.headers).toMatchObject({ 'X-Client-Key': 'ck_test', 'X-Client-Secret': 'cs_test' });
+    expect(JSON.parse(init.body)).toEqual({ msisdn: '258845916612', amount: 1, thirdPartyReference: 'TEST1' });
   });
 });

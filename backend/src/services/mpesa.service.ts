@@ -26,6 +26,8 @@ import { createRentalRequest } from './rental.service.js';
 
 /** A second PIN prompt while the first is still waiting would confuse the customer. */
 const IN_PROGRESS_WINDOW_MS = 3 * 60_000;
+/** A gateway may keep a payment PENDING for up to ~15 min (Emedx Pay); only after that is it treated as lost. */
+const LOST_AFTER_MS = 17 * 60_000;
 
 export function depositAmount(total: number): number {
   const deposit = roundMoney((total * env.MPESA_DEPOSIT_PERCENT) / 100);
@@ -156,7 +158,7 @@ async function completeCheckout(transactionId: string) {
 export async function getCheckout(id: string) {
   const t = await prisma.mpesaTransaction.findUnique({ where: { id } });
   if (!t || !t.equipmentCode) throw notFound('Payment');
-  const lost = t.status === 'PENDING' && Date.now() - t.createdAt.getTime() >= IN_PROGRESS_WINDOW_MS;
+  const lost = t.status === 'PENDING' && Date.now() - t.createdAt.getTime() >= LOST_AFTER_MS;
   const status = lost ? 'FAILED' : t.status;
   return {
     status,

@@ -49,7 +49,11 @@ const EnvSchema = z.object({
 
   // M-Pesa (Vodacom Mozambique) C2B — the customer pays a deposit and confirms with their PIN.
   // "simulated" approves instantly without moving money (demos); "vodacom" charges for real.
-  MPESA_PROVIDER: z.enum(['simulated', 'vodacom']).default('simulated'),
+  // "emedx" charges for real through the Emedx Pay gateway (no own M-Pesa account needed).
+  MPESA_PROVIDER: z.enum(['simulated', 'vodacom', 'emedx']).default('simulated'),
+  EMEDX_BASE_URL: z.string().default('https://api.payments.emedx.co.mz'),
+  EMEDX_CLIENT_KEY: z.string().default(''),
+  EMEDX_CLIENT_SECRET: z.string().default(''),
   MPESA_BASE_URL: z.string().default('https://api.vm.co.mz:18352'),
   MPESA_API_KEY: z.string().default(''),
   // Public key from the developer portal (base64, with or without PEM header). Encrypts the API key.
