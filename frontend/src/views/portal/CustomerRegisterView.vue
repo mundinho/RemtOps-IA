@@ -83,21 +83,20 @@ function startOver() {
   void router.replace({ query: { ...route.query, registration: undefined } });
 }
 
-const inputClass =
-  'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
+const inputClass = 'input';
 const errorOf = (field: string) => fieldErrors.value[field]?.[0];
 </script>
 
 <template>
   <!-- Following the Onboarding Agent's decision -->
-  <section v-if="registrationId" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  <section v-if="registrationId" class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
     <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
       <UserCheck class="size-4 text-teal-600" /> Onboarding Agent
     </div>
 
     <template v-if="!status || status.status === 'PENDING'">
       <div class="flex items-start gap-3">
-        <LoaderCircle class="mt-0.5 size-5 shrink-0 animate-spin text-amber-600" />
+        <LoaderCircle class="mt-0.5 size-5 shrink-0 animate-spin text-brand-600" />
         <div>
           <h1 class="text-base font-semibold text-slate-900">Validating your registration…</h1>
           <p class="mt-1 text-sm text-slate-500">
@@ -119,7 +118,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
       <p v-if="status.reason" class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600"><span class="font-medium">Agent:</span> {{ status.reason }}</p>
       <RouterLink
         :to="{ name: 'customer-login', query: { email: status.email ?? undefined, redirect: route.query.redirect } }"
-        class="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300"
+        class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
       >
         Sign in
       </RouterLink>
@@ -141,7 +140,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
   </section>
 
   <!-- Registration form -->
-  <form v-else class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" novalidate @submit.prevent="submit">
+  <form v-else class="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-xs" novalidate @submit.prevent="submit">
     <div>
       <h1 class="text-lg font-semibold text-slate-900">Create a customer account</h1>
       <p class="text-sm text-slate-500">Your company is identified by its NUIT. Already rented with us? Use the email we have on file.</p>
@@ -199,7 +198,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
     <button
       type="submit"
       :disabled="submitting"
-      class="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 disabled:opacity-50"
+      class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
     >
       <LoaderCircle v-if="submitting" class="size-4 animate-spin" />
       <UserPlus v-else class="size-4" />
@@ -211,7 +210,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
     </p>
     <p class="text-center text-sm text-slate-500">
       Already have an account?
-      <RouterLink :to="{ name: 'customer-login', query: route.query.redirect ? { redirect: route.query.redirect } : {} }" class="font-medium text-amber-700">
+      <RouterLink :to="{ name: 'customer-login', query: route.query.redirect ? { redirect: route.query.redirect } : {} }" class="font-medium text-brand-700">
         Sign in
       </RouterLink>
     </p>

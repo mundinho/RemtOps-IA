@@ -38,7 +38,7 @@ const { data: equipment, loading, error, refresh } = useAsync(() => equipmentApi
           <RouterLink
             :to="{ name: 'scan', params: { code: equipment.code } }"
             target="_blank"
-            class="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:underline"
+            class="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
           >
             Open public QR page <ExternalLink class="size-3.5" />
           </RouterLink>

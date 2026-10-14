@@ -29,7 +29,7 @@ function signOut() {
 <template>
   <AsyncState :loading="loading" :error="error" :has-data="!!data" @retry="refresh">
     <div v-if="data" class="space-y-4">
-      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="font-mono text-xs font-medium text-slate-400">{{ data.profile.code }} · NUIT {{ data.profile.taxId }}</p>
@@ -49,15 +49,15 @@ function signOut() {
         <p class="mt-3 text-xs text-slate-400">Customer since {{ formatDate(data.profile.memberSince) }}</p>
       </section>
 
-      <section class="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <ScanLine class="size-5 shrink-0 text-amber-700" />
-        <p class="text-sm text-amber-900">
+      <section class="flex gap-3 rounded-lg border border-brand-200 bg-brand-50 p-4">
+        <ScanLine class="size-5 shrink-0 text-brand-700" />
+        <p class="text-sm text-brand-900">
           <span class="font-semibold">To request equipment</span>, scan the QR code on the machine. While you are signed in, your company details
           are filled in automatically.
         </p>
       </section>
 
-      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white shadow-xs">
         <h2 class="flex items-center gap-2 border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-900">
           <ClipboardList class="size-4 text-slate-400" /> My rental requests
         </h2>
@@ -80,7 +80,7 @@ function signOut() {
         </ul>
       </section>
 
-      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white shadow-xs">
         <h2 class="flex items-center gap-2 border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-900">
           <FileCheck class="size-4 text-slate-400" /> Documents on file
         </h2>

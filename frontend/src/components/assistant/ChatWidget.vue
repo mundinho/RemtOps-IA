@@ -76,7 +76,7 @@ async function send(text = draft.value) {
 <template>
   <button
     v-if="!open"
-    class="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
+    class="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-800 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-900/20 transition hover:bg-brand-900"
     @click="open = true"
   >
     <MessageCircle class="size-5" />
@@ -88,7 +88,7 @@ async function send(text = draft.value) {
     class="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:h-[600px] sm:w-[380px] sm:rounded-2xl"
     aria-label="Customer assistant"
   >
-    <header class="flex items-start gap-3 border-b border-slate-100 bg-slate-900 px-4 py-3 text-white">
+    <header class="flex items-start gap-3 border-b border-brand-800 bg-brand-800 px-4 py-3 text-white">
       <span class="grid size-8 shrink-0 place-items-center rounded-full bg-amber-400">
         <Bot class="size-4 text-slate-900" />
       </span>
@@ -96,7 +96,7 @@ async function send(text = draft.value) {
         <p class="text-sm font-semibold">RentOps assistant</p>
         <p class="truncate text-xs text-slate-300">{{ equipmentName ?? equipmentCode }} · answers from live data</p>
       </div>
-      <button class="rounded-md p-1 text-slate-300 hover:bg-slate-800 hover:text-white" aria-label="Close" @click="open = false">
+      <button class="rounded-md p-1 text-brand-200 hover:bg-brand-700 hover:text-white" aria-label="Close" @click="open = false">
         <X class="size-5" />
       </button>
     </header>
@@ -110,7 +110,7 @@ async function send(text = draft.value) {
       <template v-for="(turn, i) in turns" :key="i">
         <div
           v-if="turn.role === 'user'"
-          class="ml-auto max-w-[85%] whitespace-pre-line rounded-2xl rounded-tr-sm bg-amber-400 px-3 py-2 text-sm text-slate-900"
+          class="ml-auto max-w-[85%] whitespace-pre-line rounded-2xl rounded-tr-sm bg-brand-700 px-3 py-2 text-sm text-white"
         >
           {{ turn.content }}
         </div>
@@ -128,7 +128,7 @@ async function send(text = draft.value) {
         <button
           v-for="s in suggestions"
           :key="s"
-          class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-amber-50 hover:ring-amber-300"
+          class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-brand-50 hover:ring-brand-300"
           @click="send(s)"
         >
           {{ s }}
@@ -143,13 +143,13 @@ async function send(text = draft.value) {
           rows="1"
           :maxlength="MAX_LENGTH"
           placeholder="Type your question…"
-          class="max-h-28 min-h-[40px] flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+          class="max-h-28 min-h-[40px] flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/15"
           @keydown.enter.exact.prevent="send()"
         />
         <button
           type="submit"
           :disabled="sending || !draft.trim()"
-          class="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-400 text-slate-900 transition hover:bg-amber-300 disabled:opacity-40"
+          class="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-700 text-white transition hover:bg-brand-800 disabled:opacity-40"
           aria-label="Send"
         >
           <Send class="size-4" />

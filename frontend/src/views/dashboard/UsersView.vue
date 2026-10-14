@@ -80,8 +80,7 @@ async function save() {
 }
 
 const errorOf = (field: string) => fieldErrors.value[field]?.[0];
-const inputClass =
-  'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:bg-slate-50 disabled:text-slate-500';
+const inputClass = 'input';
 </script>
 
 <template>
@@ -91,7 +90,7 @@ const inputClass =
   >
     <template #actions>
       <button
-        class="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-300"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
         @click="openCreate"
       >
         <Plus class="size-4" /> New user
@@ -109,7 +108,7 @@ const inputClass =
           <span class="text-xs text-slate-400">{{ row.email }}</span>
         </template>
         <template #cell-role="{ row }">
-          <span class="rounded px-1.5 py-0.5 text-xs font-medium" :class="row.role === 'ADMIN' ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'">
+          <span class="rounded px-1.5 py-0.5 text-xs font-medium" :class="row.role === 'ADMIN' ? 'bg-brand-50 text-brand-800' : 'bg-slate-100 text-slate-600'">
             {{ row.role === 'ADMIN' ? 'Admin' : row.role === 'OPERATOR' ? 'Operator' : row.role }}
           </span>
         </template>
@@ -151,9 +150,9 @@ const inputClass =
           v-for="r in ROLES"
           :key="r.value"
           class="flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition"
-          :class="[form.role === r.value ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' : 'border-slate-200 hover:bg-slate-50', isSelf(editing) && 'pointer-events-none opacity-60']"
+          :class="[form.role === r.value ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50', isSelf(editing) && 'pointer-events-none opacity-60']"
         >
-          <input v-model="form.role" type="radio" :value="r.value" class="mt-0.5 accent-amber-500" :disabled="isSelf(editing)" />
+          <input v-model="form.role" type="radio" :value="r.value" class="mt-0.5 accent-brand-600" :disabled="isSelf(editing)" />
           <span>
             <span class="block text-sm font-medium text-slate-800">{{ r.label }}</span>
             <span class="block text-xs text-slate-400">{{ r.hint }}</span>
@@ -162,7 +161,7 @@ const inputClass =
       </fieldset>
 
       <label v-if="editing" class="flex items-center gap-2.5">
-        <input v-model="form.isActive" type="checkbox" class="size-4 rounded border-slate-300 accent-amber-500" :disabled="isSelf(editing)" />
+        <input v-model="form.isActive" type="checkbox" class="size-4 rounded border-slate-300 accent-brand-600" :disabled="isSelf(editing)" />
         <span class="text-sm text-slate-700">Active — can sign in</span>
       </label>
       <p v-if="isSelf(editing)" class="text-xs text-slate-400">You cannot change your own role or deactivate yourself.</p>
@@ -181,7 +180,7 @@ const inputClass =
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 disabled:opacity-50"
+          class="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
         >
           {{ saving ? 'Saving…' : editing ? 'Save changes' : 'Create user' }}
         </button>

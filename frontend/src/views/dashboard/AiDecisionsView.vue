@@ -31,7 +31,7 @@ const count = (kind: string) => (data.value ?? []).filter((r) => r.kind === kind
       v-for="t in TABS"
       :key="t.key"
       class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-      :class="tab === t.key ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
+      :class="tab === t.key ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
       @click="tab = t.key"
     >
       {{ t.label }} <span class="ml-1 tabular-nums opacity-60">{{ count(t.key) }}</span>
@@ -42,7 +42,7 @@ const count = (kind: string) => (data.value ?? []).filter((r) => r.kind === kind
     <div v-if="visible.length" class="grid gap-4 xl:grid-cols-2">
       <ReviewCard v-for="review in visible" :key="review.id" :review="review" />
     </div>
-    <div v-else class="rounded-xl border border-dashed border-slate-300 bg-white">
+    <div v-else class="rounded-lg border border-dashed border-slate-300 bg-white">
       <EmptyState
         :icon="Gavel"
         :title="tab === 'ANOMALY' ? 'No anomalies triaged yet' : 'No flagged rental decisions yet'"

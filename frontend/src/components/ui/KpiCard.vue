@@ -22,21 +22,23 @@ withDefaults(
   <component
     :is="to ? 'RouterLink' : 'div'"
     :to="to"
-    class="group flex flex-col gap-3 rounded-xl border bg-white p-4 transition"
+    class="group relative flex flex-col gap-2 overflow-hidden rounded-lg border bg-white p-4 shadow-xs transition"
     :class="[
-      highlight ? 'border-violet-300 shadow-sm shadow-violet-100' : 'border-slate-200',
-      to && 'hover:border-slate-300 hover:shadow-sm',
+      highlight ? 'border-brand-300 ring-1 ring-brand-200' : 'border-slate-200',
+      to && 'hover:border-brand-300 hover:shadow-sm',
     ]"
   >
-    <div class="flex items-center justify-between">
-      <span class="text-sm font-medium text-slate-500">{{ label }}</span>
-      <span class="grid size-8 place-items-center rounded-lg" :class="TONE_CLASSES[tone].soft">
-        <component :is="icon" class="size-4" :class="TONE_CLASSES[tone].text" />
+    <!-- Thin accent line in the KPI's tone -->
+    <span class="absolute inset-x-0 top-0 h-0.5" :class="TONE_CLASSES[tone].dot" aria-hidden="true" />
+    <div class="flex items-center justify-between gap-2">
+      <span class="eyebrow truncate">{{ label }}</span>
+      <span class="grid size-7 shrink-0 place-items-center rounded-md" :class="TONE_CLASSES[tone].soft">
+        <component :is="icon" class="size-3.5" :class="TONE_CLASSES[tone].text" />
       </span>
     </div>
     <div class="flex items-baseline gap-2">
-      <span class="text-2xl font-semibold tabular-nums text-slate-900">{{ value }}</span>
-      <span v-if="hint" class="text-xs text-slate-400">{{ hint }}</span>
+      <span class="text-[1.65rem] leading-tight font-semibold tracking-tight tabular-nums text-slate-900">{{ value }}</span>
+      <span v-if="hint" class="text-xs text-slate-500">{{ hint }}</span>
     </div>
   </component>
 </template>

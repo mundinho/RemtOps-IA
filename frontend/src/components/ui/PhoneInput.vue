@@ -77,7 +77,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
 <template>
   <div ref="root" class="relative mt-1" @keydown.esc="open = false">
     <div
-      class="flex w-full min-w-0 overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20"
+      class="flex w-full min-w-0 overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/15"
       :class="disabled && 'bg-slate-50'"
     >
       <button
@@ -119,7 +119,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
           <button
             type="button"
             class="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-slate-50"
-            :class="c.code === country && 'bg-amber-50'"
+            :class="c.code === country && 'bg-brand-50'"
             @click="choose(c.code)"
           >
             <Flag :code="c.code" />

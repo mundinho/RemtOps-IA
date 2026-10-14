@@ -55,7 +55,7 @@ const columns: Column[] = [
       v-for="(f, i) in FILTERS"
       :key="f.label"
       class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-      :class="active === i ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
+      :class="active === i ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
       @click="active = i"
     >
       {{ f.label }}

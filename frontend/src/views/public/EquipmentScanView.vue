@@ -91,9 +91,8 @@ async function submit() {
   }
 }
 
-// min-w-0: native date inputs have an intrinsic min width that would overflow narrow phones
-const inputClass =
-  'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
+// "input" (style.css) includes min-w-0: native date inputs would otherwise overflow narrow phones
+const inputClass = 'input';
 const errorOf = (field: string) => fieldErrors.value[field]?.[0];
 </script>
 
@@ -101,10 +100,10 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
   <AsyncState :loading="loading" :error="error" :has-data="!!equipment" @retry="refresh">
     <div v-if="equipment" class="space-y-4">
       <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
-        <ScanLine class="size-4 text-amber-600" /> Equipment identified from QR code
+        <ScanLine class="size-4 text-brand-600" /> Equipment identified from QR code
       </div>
 
-      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="font-mono text-xs font-medium text-slate-400">{{ equipment.code }}</p>
@@ -126,16 +125,16 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
         </p>
       </section>
 
-      <form class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" novalidate @submit.prevent="submit">
+      <form class="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-xs" novalidate @submit.prevent="submit">
         <h2 class="text-base font-semibold text-slate-900">Request this equipment</h2>
 
         <!-- Who is renting -->
         <fieldset class="space-y-3">
           <div class="flex items-center justify-between">
             <legend class="text-sm font-semibold text-slate-800">Your details</legend>
-            <RouterLink v-if="signedIn" :to="{ name: 'portal' }" class="text-xs font-medium text-amber-700">From your account</RouterLink>
+            <RouterLink v-if="signedIn" :to="{ name: 'portal' }" class="text-xs font-medium text-brand-700">From your account</RouterLink>
             <details v-else-if="demoCustomers?.length" class="relative">
-              <summary class="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-amber-700">
+              <summary class="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand-700">
                 <WandSparkles class="size-3.5" /> Demo: fill in
               </summary>
               <div class="absolute right-0 z-10 mt-1 w-64 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
@@ -171,7 +170,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
             <span v-else-if="signedIn" class="mt-1 block text-xs text-slate-400">Your signed-in company. The contact details below can be changed for this request.</span>
             <span v-else class="mt-1 block text-xs text-slate-400">
               Identifies your company. Returning customers keep their history.
-              <RouterLink :to="{ name: 'customer-login', query: { redirect: route.fullPath } }" class="font-medium text-amber-700">Sign in</RouterLink>
+              <RouterLink :to="{ name: 'customer-login', query: { redirect: route.fullPath } }" class="font-medium text-brand-700">Sign in</RouterLink>
               to fill this in automatically.
             </span>
           </label>
@@ -228,10 +227,10 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
               v-for="m in PAYMENT_METHODS"
               :key="m.value"
               class="flex cursor-pointer items-center gap-2.5 rounded-lg border p-2.5 transition"
-              :class="form.paymentMethod === m.value ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' : 'border-slate-200 hover:bg-slate-50'"
+              :class="form.paymentMethod === m.value ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50'"
             >
               <input v-model="form.paymentMethod" type="radio" name="paymentMethod" :value="m.value" class="sr-only" />
-              <component :is="m.icon" class="size-4 shrink-0" :class="form.paymentMethod === m.value ? 'text-amber-700' : 'text-slate-400'" />
+              <component :is="m.icon" class="size-4 shrink-0" :class="form.paymentMethod === m.value ? 'text-brand-700' : 'text-slate-400'" />
               <span class="min-w-0">
                 <span class="block text-sm font-medium text-slate-800">{{ m.label }}</span>
                 <span class="block truncate text-xs text-slate-400">{{ m.hint }}</span>
@@ -251,7 +250,7 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
         <button
           type="submit"
           :disabled="submitting || !days"
-          class="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 disabled:opacity-50"
+          class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
         >
           <LoaderCircle v-if="submitting" class="size-4 animate-spin" />
           <Send v-else class="size-4" />

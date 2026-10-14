@@ -26,13 +26,12 @@ async function submit() {
   }
 }
 
-const inputClass =
-  'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
+const inputClass = 'input';
 </script>
 
 <template>
   <div class="space-y-4">
-    <form class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="submit">
+    <form class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 shadow-xs" @submit.prevent="submit">
       <div>
         <h1 class="text-lg font-semibold text-slate-900">Customer sign in</h1>
         <p class="text-sm text-slate-500">Follow your rental requests and request equipment with your details filled in.</p>
@@ -52,7 +51,7 @@ const inputClass =
       <button
         type="submit"
         :disabled="submitting"
-        class="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 disabled:opacity-50"
+        class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
       >
         <LoaderCircle v-if="submitting" class="size-4 animate-spin" />
         <LogIn v-else class="size-4" />
@@ -61,7 +60,7 @@ const inputClass =
 
       <button
         type="button"
-        class="flex w-full items-center justify-center gap-1 text-xs font-medium text-amber-700"
+        class="flex w-full items-center justify-center gap-1 text-xs font-medium text-brand-700"
         @click="Object.assign(form, { email: 'joao.silva@construcoessilva.co.mz', password: 'cliente123' })"
       >
         <WandSparkles class="size-3.5" /> Demo: Construções Silva (CUS-001)
@@ -70,9 +69,9 @@ const inputClass =
 
     <RouterLink
       :to="{ name: 'customer-register', query: route.query.redirect ? { redirect: route.query.redirect } : {} }"
-      class="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-4 text-sm font-medium text-slate-700 hover:bg-white"
+      class="flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white/60 p-4 text-sm font-medium text-slate-700 hover:bg-white"
     >
-      <UserPlus class="size-4 text-amber-600" /> New customer? Create an account
+      <UserPlus class="size-4 text-brand-600" /> New customer? Create an account
     </RouterLink>
   </div>
 </template>

@@ -53,7 +53,7 @@ const columns: Column[] = [
       v-for="(filter, i) in FILTERS"
       :key="filter.label"
       class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-      :class="activeFilter === i ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
+      :class="activeFilter === i ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
       @click="activeFilter = i"
     >
       {{ filter.label }}

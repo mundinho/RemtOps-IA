@@ -32,7 +32,7 @@ async function run() {
     </span>
     <span v-if="error" class="text-xs text-rose-600">{{ error }}</span>
     <button
-      class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+      class="inline-flex items-center gap-1.5 rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-800 disabled:opacity-60"
       :disabled="status?.running"
       title="Maintenance, Finance and Risk agents scan the operation; the Notification Agent reports what they found"
       @click="run"

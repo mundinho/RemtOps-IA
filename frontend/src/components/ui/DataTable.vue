@@ -17,11 +17,11 @@ const cellValue = (row: T, key: string) => (row as Record<string, unknown>)[key]
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm">
       <thead>
-        <tr class="border-b border-slate-200 bg-slate-50/60">
+        <tr class="border-b border-slate-200 bg-slate-50">
           <th
             v-for="col in columns"
             :key="col.key"
-            class="whitespace-nowrap px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-500"
+            class="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500"
             :class="[col.align === 'right' && 'text-right', col.class]"
           >
             {{ col.label }}
@@ -34,8 +34,8 @@ const cellValue = (row: T, key: string) => (row as Record<string, unknown>)[key]
           :key="row.id"
           class="transition-colors"
           :class="[
-            clickable && 'cursor-pointer hover:bg-slate-50',
-            selectedId === row.id && 'bg-amber-50/60 hover:bg-amber-50',
+            clickable && 'cursor-pointer hover:bg-slate-50/80',
+            selectedId === row.id && 'bg-brand-50/70 shadow-[inset_3px_0_0_var(--color-brand-600)] hover:bg-brand-50',
           ]"
           @click="clickable && $emit('rowClick', row)"
         >

@@ -68,7 +68,7 @@ const decisionChip = (r: Overview['reviewQueue'][number]) => {
       <div class="mt-6 grid gap-6 xl:grid-cols-3">
         <Panel title="Live agent activity" subtitle="Rental workflows and monitoring cycles" class="xl:col-span-2">
           <template #actions>
-            <RouterLink to="/dashboard/agents" class="text-sm font-medium text-amber-700 hover:underline">View all</RouterLink>
+            <RouterLink to="/dashboard/agents" class="text-sm font-medium text-brand-700 hover:underline">View all</RouterLink>
           </template>
           <AgentActivityFeed v-if="data.recentActivity.length" :executions="data.recentActivity" />
           <EmptyState
@@ -93,7 +93,7 @@ const decisionChip = (r: Overview['reviewQueue'][number]) => {
         <div class="space-y-6">
           <Panel title="Latest AI decisions" subtitle="Flagged cases decided by the Approval Agent" flush>
             <template #actions>
-              <RouterLink to="/dashboard/decisions" class="text-sm font-medium text-amber-700 hover:underline">All</RouterLink>
+              <RouterLink to="/dashboard/decisions" class="text-sm font-medium text-brand-700 hover:underline">All</RouterLink>
             </template>
             <ul v-if="data.reviewQueue.length" class="divide-y divide-slate-100">
               <li v-for="review in data.reviewQueue" :key="review.id">
@@ -112,7 +112,7 @@ const decisionChip = (r: Overview['reviewQueue'][number]) => {
 
           <Panel title="Open alerts" flush>
             <template #actions>
-              <RouterLink to="/dashboard/alerts" class="text-sm font-medium text-amber-700 hover:underline">All</RouterLink>
+              <RouterLink to="/dashboard/alerts" class="text-sm font-medium text-brand-700 hover:underline">All</RouterLink>
             </template>
             <ul v-if="data.alertFeed.length" class="divide-y divide-slate-100">
               <li v-for="alert in data.alertFeed" :key="alert.id" class="flex items-start gap-3 px-4 py-3">

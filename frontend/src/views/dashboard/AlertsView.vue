@@ -37,14 +37,14 @@ const expanded = ref<string | null>(null);
   <div class="mb-4 flex flex-wrap gap-1.5">
     <button
       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
-      :class="tab === 'alerts' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
+      :class="tab === 'alerts' ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
       @click="tab = 'alerts'"
     >
       <TriangleAlert class="size-4" /> Alerts <span class="tabular-nums opacity-60">{{ alerts.data.value?.filter((a) => a.status === 'OPEN').length ?? 0 }} open</span>
     </button>
     <button
       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
-      :class="tab === 'notifications' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
+      :class="tab === 'notifications' ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'"
       @click="tab = 'notifications'"
     >
       <Mail class="size-4" /> Notifications sent <span class="tabular-nums opacity-60">{{ notifications.data.value?.length ?? 0 }}</span>
@@ -57,7 +57,7 @@ const expanded = ref<string | null>(null);
         v-for="c in CATEGORIES"
         :key="c"
         class="rounded-full px-2.5 py-1 text-xs font-medium transition"
-        :class="category === c ? 'bg-amber-100 text-amber-900' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50'"
+        :class="category === c ? 'bg-brand-700 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50'"
         @click="category = c"
       >
         {{ c === 'ALL' ? 'All categories' : c.charAt(0) + c.slice(1).toLowerCase() }}
@@ -87,7 +87,7 @@ const expanded = ref<string | null>(null);
 
   <AsyncState v-else :loading="notifications.loading.value" :error="notifications.error.value" :has-data="!!notifications.data.value" @retry="notifications.refresh">
     <div v-if="notifications.data.value?.length" class="space-y-3">
-      <article v-for="n in notifications.data.value" :key="n.id" class="rounded-xl border border-slate-200 bg-white p-4">
+      <article v-for="n in notifications.data.value" :key="n.id" class="rounded-lg border border-slate-200 bg-white shadow-xs p-4">
         <header class="flex flex-wrap items-center gap-2">
           <StatusBadge :status="n.priority" :label="`${n.priority.charAt(0)}${n.priority.slice(1).toLowerCase()} priority`" />
           <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">{{ n.type }}</span>
@@ -98,7 +98,7 @@ const expanded = ref<string | null>(null);
         <p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ n.body }}</p>
       </article>
     </div>
-    <div v-else class="rounded-xl border border-dashed border-slate-300 bg-white">
+    <div v-else class="rounded-lg border border-dashed border-slate-300 bg-white">
       <EmptyState :icon="Bell" title="No notifications yet" />
     </div>
   </AsyncState>

@@ -1,6 +1,23 @@
 <script setup lang="ts">
-import { Activity, Bell, ChartColumn, ClipboardList, Construction, Cpu, Eye, Gavel, Hammer, LayoutDashboard, LogOut, QrCode, Truck, UserCog, Users, Wallet } from '@lucide/vue';
-import { computed } from 'vue';
+import {
+  Activity,
+  Bell,
+  ChartColumn,
+  ClipboardList,
+  Construction,
+  Cpu,
+  Eye,
+  Gavel,
+  Hammer,
+  LayoutDashboard,
+  LogOut,
+  QrCode,
+  Truck,
+  UserCog,
+  Users,
+  Wallet,
+} from '@lucide/vue';
+import { computed, type Component } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAsync } from '@/composables/useAsync';
 import { dashboardApi } from '@/services/dashboard.api';
@@ -18,92 +35,131 @@ function signOut() {
 const { data: overview } = useAsync(dashboardApi.overview, { pollMs: 8000 });
 const { data: health, error: healthError } = useAsync(systemApi.health, { pollMs: 15000 });
 
-const nav = computed(() => [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { to: '/dashboard/statistics', label: 'Statistics', icon: ChartColumn },
-  { to: '/dashboard/agents', label: 'Agent Activity', icon: Activity },
-  { to: '/dashboard/decisions', label: 'AI Decisions', icon: Gavel },
-  { to: '/dashboard/alerts', label: 'Alerts & Notifications', icon: Bell, badge: overview.value?.kpis.openAlerts || undefined, badgeTone: 'bg-rose-500' },
-  { to: '/dashboard/rentals', label: 'Rentals', icon: ClipboardList, badge: overview.value?.kpis.pendingRentals || undefined },
-  { to: '/dashboard/customers', label: 'Customers', icon: Users },
-  { to: '/dashboard/equipment', label: 'Equipment', icon: Truck },
-  { to: '/dashboard/maintenance', label: 'Maintenance', icon: Hammer },
-  { to: '/dashboard/finance', label: 'Finance', icon: Wallet },
-  { to: '/dashboard/qr-codes', label: 'QR Labels', icon: QrCode },
-  ...(isAdmin() ? [{ to: '/dashboard/users', label: 'Users', icon: UserCog }] : []),
+interface NavItem {
+  to: string;
+  label: string;
+  icon: Component;
+  exact?: boolean;
+  badge?: number;
+  badgeTone?: string;
+}
+
+const groups = computed<{ label: string; items: NavItem[] }[]>(() => [
+  {
+    label: 'Monitor',
+    items: [
+      { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
+      { to: '/dashboard/statistics', label: 'Statistics', icon: ChartColumn },
+      { to: '/dashboard/agents', label: 'Agent Activity', icon: Activity },
+      { to: '/dashboard/decisions', label: 'AI Decisions', icon: Gavel },
+      { to: '/dashboard/alerts', label: 'Alerts & Notifications', icon: Bell, badge: overview.value?.kpis.openAlerts || undefined, badgeTone: 'bg-rose-500' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/dashboard/rentals', label: 'Rentals', icon: ClipboardList, badge: overview.value?.kpis.pendingRentals || undefined },
+      { to: '/dashboard/customers', label: 'Customers', icon: Users },
+      { to: '/dashboard/equipment', label: 'Equipment', icon: Truck },
+      { to: '/dashboard/maintenance', label: 'Maintenance', icon: Hammer },
+      { to: '/dashboard/finance', label: 'Finance', icon: Wallet },
+      { to: '/dashboard/qr-codes', label: 'QR Labels', icon: QrCode },
+    ],
+  },
+  ...(isAdmin() ? [{ label: 'Administration', items: [{ to: '/dashboard/users', label: 'Users', icon: UserCog }] }] : []),
 ]);
+
+const initials = computed(() =>
+  (session.staff?.user.name ?? '?')
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase(),
+);
 </script>
 
 <template>
   <div class="min-h-screen lg:flex">
-    <aside class="no-print flex shrink-0 flex-col bg-slate-900 text-slate-300 lg:sticky lg:top-0 lg:h-screen lg:w-60">
-      <div class="flex items-center gap-2.5 px-5 py-5">
-        <span class="grid size-8 place-items-center rounded-lg bg-amber-400">
-          <Construction class="size-4.5 text-slate-900" />
+    <aside class="no-print flex shrink-0 flex-col bg-brand-950 text-brand-100 lg:sticky lg:top-0 lg:h-screen lg:w-64">
+      <!-- Brand -->
+      <div class="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+        <span class="grid size-9 place-items-center rounded-md bg-amber-400 shadow-sm">
+          <Construction class="size-5 text-brand-950" />
         </span>
         <div class="leading-tight">
-          <p class="text-sm font-semibold text-white">RentOps AI</p>
-          <p class="text-xs text-slate-400">Equipment Rental Operations</p>
+          <p class="text-[15px] font-semibold tracking-tight text-white">RentOps</p>
+          <p class="text-[11px] font-medium tracking-[0.12em] text-brand-300 uppercase">Equipment Operations</p>
         </div>
       </div>
 
-      <nav class="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:overflow-visible">
-        <RouterLink
-          v-for="item in nav"
-          :key="item.to"
-          v-slot="{ href, navigate, isActive, isExactActive }"
-          :to="item.to"
-          custom
-        >
-          <a
-            :href="href"
-            class="flex shrink-0 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
-            :class="(item.exact ? isExactActive : isActive) ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/60 hover:text-white'"
-            @click="navigate"
+      <!-- Navigation: grouped on desktop, one scrollable row on phones -->
+      <nav class="flex gap-1 overflow-x-auto px-3 py-3 lg:flex-1 lg:flex-col lg:gap-5 lg:overflow-y-auto">
+        <div v-for="group in groups" :key="group.label" class="flex gap-1 lg:flex-col">
+          <p class="hidden px-3 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-brand-400 uppercase lg:block">{{ group.label }}</p>
+          <RouterLink
+            v-for="item in group.items"
+            :key="item.to"
+            v-slot="{ href, navigate, isActive, isExactActive }"
+            :to="item.to"
+            custom
           >
-            <component :is="item.icon" class="size-4" />
-            <span class="flex-1">{{ item.label }}</span>
-            <span
-              v-if="item.badge"
-              class="rounded-full px-1.5 py-px text-xs font-semibold tabular-nums text-white"
-              :class="item.badgeTone ?? 'bg-violet-500'"
+            <a
+              :href="href"
+              class="relative flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition"
+              :class="
+                (item.exact ? isExactActive : isActive)
+                  ? 'bg-white/10 text-white before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-amber-400'
+                  : 'text-brand-200 hover:bg-white/5 hover:text-white'
+              "
+              @click="navigate"
             >
-              {{ item.badge }}
-            </span>
-          </a>
-        </RouterLink>
+              <component :is="item.icon" class="size-4 shrink-0 opacity-90" />
+              <span class="flex-1 whitespace-nowrap">{{ item.label }}</span>
+              <span
+                v-if="item.badge"
+                class="rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums text-white"
+                :class="item.badgeTone ?? 'bg-brand-500'"
+              >
+                {{ item.badge }}
+              </span>
+            </a>
+          </RouterLink>
+        </div>
       </nav>
 
-      <div class="hidden border-t border-slate-800 px-5 py-4 text-xs lg:block">
+      <!-- System status -->
+      <div class="hidden border-t border-white/10 px-5 py-4 text-xs lg:block">
         <div class="flex items-center gap-2">
           <span class="relative flex size-2">
-            <span
-              v-if="!healthError"
-              class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60"
-            />
+            <span v-if="!healthError" class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span class="relative inline-flex size-2 rounded-full" :class="healthError ? 'bg-rose-500' : 'bg-emerald-400'" />
           </span>
-          <span class="text-slate-300">{{ healthError ? 'API unreachable' : 'Fully autonomous — 0% human decisions' }}</span>
+          <span class="text-brand-100">{{ healthError ? 'API unreachable' : 'Autonomous operations online' }}</span>
         </div>
-        <p class="mt-2 flex items-center gap-1.5 text-slate-500"><Eye class="size-3" /> Read-only: people observe, agents decide</p>
-        <p v-if="health" class="mt-2 flex items-center gap-1.5 text-slate-500">
-          <Cpu class="size-3" /> {{ health.llm.model }}
-        </p>
+        <p class="mt-2 flex items-center gap-1.5 text-brand-300"><Eye class="size-3" /> Read-only: people observe, agents decide</p>
+        <p v-if="health" class="mt-1.5 flex items-center gap-1.5 text-brand-300"><Cpu class="size-3" /> Model: {{ health.llm.model }}</p>
       </div>
 
-      <div v-if="session.staff" class="flex items-center gap-2 border-t border-slate-800 px-5 py-3 text-xs">
+      <!-- Signed-in user -->
+      <div v-if="session.staff" class="flex items-center gap-3 border-t border-white/10 px-5 py-3">
+        <span class="grid size-8 shrink-0 place-items-center rounded-full bg-brand-700 text-xs font-semibold text-white ring-1 ring-white/20">
+          {{ initials }}
+        </span>
         <div class="min-w-0 flex-1 leading-tight">
-          <p class="truncate font-medium text-slate-200">{{ session.staff.user.name }}</p>
-          <p class="truncate text-slate-500">{{ session.staff.user.role === 'ADMIN' ? 'Admin' : 'Operator' }} · {{ session.staff.user.email }}</p>
+          <p class="truncate text-sm font-medium text-white">{{ session.staff.user.name }}</p>
+          <p class="truncate text-xs text-brand-300">{{ session.staff.user.role === 'ADMIN' ? 'Administrator' : 'Operator' }}</p>
         </div>
-        <button type="button" title="Sign out" class="rounded-md p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white" @click="signOut">
+        <button type="button" title="Sign out" aria-label="Sign out" class="rounded-md p-1.5 text-brand-300 hover:bg-white/10 hover:text-white" @click="signOut">
           <LogOut class="size-4" />
         </button>
       </div>
     </aside>
 
-    <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-      <RouterView />
+    <main class="min-w-0 flex-1">
+      <div class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <RouterView />
+      </div>
     </main>
   </div>
 </template>

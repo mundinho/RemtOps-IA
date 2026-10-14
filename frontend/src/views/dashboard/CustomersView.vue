@@ -141,8 +141,7 @@ const missingRequired = computed(() =>
   form.value.docs.filter((d) => (d.type === 'ID_DOCUMENT' || d.type === 'INSURANCE_CERTIFICATE') && (!d.onFile || d.expiresAt < today)),
 );
 
-const inputClass =
-  'mt-1 block w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
+const inputClass = 'input';
 </script>
 
 <template>
@@ -152,7 +151,7 @@ const inputClass =
   >
     <template #actions>
       <button
-        class="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-300"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
         @click="openCreate"
       >
         <Plus class="size-4" /> New customer
@@ -237,7 +236,7 @@ const inputClass =
         <div class="divide-y divide-slate-100">
           <div v-for="(doc, i) in form.docs" :key="doc.type" class="px-4 py-3">
             <label class="flex items-start gap-2.5">
-              <input v-model="doc.onFile" type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 accent-amber-500" />
+              <input v-model="doc.onFile" type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 accent-brand-600" />
               <span>
                 <span class="block text-sm font-medium text-slate-800">{{ DOC_TYPES[i]!.label }}</span>
                 <span class="block text-xs text-slate-400">{{ DOC_TYPES[i]!.hint }}</span>
@@ -273,7 +272,7 @@ const inputClass =
         <button
           type="submit"
           :disabled="saving"
-          class="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 disabled:opacity-50"
+          class="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
         >
           {{ saving ? 'Saving…' : editing ? 'Save changes' : 'Register customer' }}
         </button>

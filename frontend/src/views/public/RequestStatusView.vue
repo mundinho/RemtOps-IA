@@ -67,7 +67,7 @@ const inProgress = computed(() => request.value && ['REQUESTED', 'IN_REVIEW'].in
 <template>
   <AsyncState :loading="loading" :error="error" :has-data="!!request" @retry="refresh">
     <div v-if="request" class="space-y-4">
-      <section class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-xs">
         <span class="mx-auto grid size-14 place-items-center rounded-full" :class="hero.tone">
           <component :is="hero.icon" class="size-7" :class="hero.spin && 'animate-spin'" />
         </span>
@@ -84,7 +84,7 @@ const inProgress = computed(() => request.value && ['REQUESTED', 'IN_REVIEW'].in
         </div>
       </section>
 
-      <section v-if="inProgress" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section v-if="inProgress" class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <ol class="space-y-3">
           <li v-for="step in STEPS" :key="step.key" class="flex items-center gap-3 text-sm">
             <span
@@ -103,7 +103,7 @@ const inProgress = computed(() => request.value && ['REQUESTED', 'IN_REVIEW'].in
         </ol>
       </section>
 
-      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <DetailList
           :items="[
             { label: 'Reference', value: request.code },

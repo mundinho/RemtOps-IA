@@ -42,7 +42,7 @@ async function resetDemo() {
         <RefreshCw class="size-4" :class="resetting && 'animate-spin'" /> Reset demo
       </button>
       <button
-        class="no-print inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        class="no-print inline-flex items-center gap-1.5 rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-800"
         @click="print"
       >
         <Printer class="size-4" /> Print labels
@@ -67,7 +67,7 @@ async function resetDemo() {
             <RouterLink
               :to="{ name: 'scan', params: { code: item.code } }"
               target="_blank"
-              class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:underline"
+              class="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
             >
               Simulate scan <ExternalLink class="size-3" />
             </RouterLink>

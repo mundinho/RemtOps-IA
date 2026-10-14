@@ -28,7 +28,7 @@ const outcome = () => {
 </script>
 
 <template>
-  <article class="rounded-xl border border-slate-200 bg-white p-5">
+  <article class="rounded-lg border border-slate-200 bg-white shadow-xs p-5">
     <header class="flex flex-wrap items-center gap-2">
       <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="outcome().class">{{ outcome().label }}</span>
       <span class="rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
