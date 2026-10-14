@@ -152,7 +152,7 @@ inteiro e decide `APPROVE` (opcionalmente com **condições**) ou `REJECT`.
 - **Modo monitorização:** lembretes de devolução, avisos de atraso e um resumo para a operação **por ordem
   de prioridade**. `HIGH`/`CRITICAL` são enviados um a um e o resto num único resumo, para não cansar quem
   lê. Cada notificação tem uma chave de deduplicação.
-- **Canais:** cada notificação a um cliente segue por **email** (SMTP) e, se o cliente tiver telefone, por um **SMS** curto (MozeSMS, até 160 caracteres sem acentos = 1 crédito) com o link para o pedido. Sem configuração, ambos ficam `SIMULATED`. O resultado (`SENT`/`FAILED` + motivo) fica registado e visível em Alerts & Notifications. Uma falha do gateway nunca interrompe um agente.
+- **Canais:** cada notificação a um cliente segue por **email** (SMTP). Quando o aluguer é **aprovado**, o cliente recebe também **um SMS** (MozeSMS) com o texto fixo "Equipamento alugado com sucesso" (sem acentos, 1 crédito), uma única vez por aluguer. Recusas, lembretes e avisos de pagamento vão só por email. Sem configuração, ambos ficam `SIMULATED`. O resultado (`SENT`/`FAILED` + motivo) fica registado e visível em Alerts & Notifications. Uma falha do gateway nunca interrompe um agente.
 
 ### Onboarding Agent — registo de clientes
 Valida cada **autorregisto** de cliente. **0% humano.**

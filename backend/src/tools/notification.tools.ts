@@ -4,10 +4,17 @@ import * as monitoringService from '../services/monitoring.service.js';
 import * as notificationService from '../services/notification.service.js';
 import { BUSINESS_RULES } from '../config/businessRules.js';
 import { env } from '../config/env.js';
-import { toSmsText } from '../sms/gateway.js';
 import { defineTool, type ToolContext } from './types.js';
 
 const OPERATIONS_INBOX = 'operations@rentops.local';
+
+/**
+ * Which events also send an SMS, and its exact text. Only a confirmed rental does — short, plain and
+ * without accents (GSM-7, one credit). Other events (rejections, reminders…) go by email only.
+ */
+const SMS_TEXT: Partial<Record<z.infer<typeof NOTIFICATION_TYPE>, string>> = {
+  RENTAL_APPROVED: 'Equipamento alugado com sucesso',
+};
 
 const NOTIFICATION_TYPE = z.enum([
   'RENTAL_APPROVED',
@@ -73,21 +80,21 @@ export const createNotification = defineTool({
       customerId,
     });
 
-    // Plus one short SMS (one credit) pointing to the full message, when the customer has a phone.
+    // Plus one SMS for the events that have a fixed SMS text (one credit each), when the customer has a phone.
     let sms: { id: string; status: string } | undefined;
-    if (customer.phone) {
-      const link = rentalId ? `${env.FRONTEND_URL.replace(/\/$/, '')}/requests/${rentalId}` : undefined;
-      const text = toSmsText(message.subject, link);
+    const smsText = SMS_TEXT[message.type];
+    if (smsText && customer.phone) {
       const created = await notificationService.createNotification({
         type: message.type,
         priority: message.priority,
         channel: 'SMS',
         recipient: customer.phone,
         subject: message.subject,
-        body: text,
+        body: smsText,
         rentalId,
         customerId,
-        dedupeKey: message.dedupeKey ? `${message.dedupeKey}:SMS` : undefined,
+        // One SMS per rental and event, even if the notification step runs again
+        dedupeKey: `SMS:${message.type}:${rentalId ?? message.dedupeKey ?? customerId}`,
       });
       sms = { id: created.id, status: created.status };
     }
