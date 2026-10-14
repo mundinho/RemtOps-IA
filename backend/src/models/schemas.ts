@@ -10,6 +10,8 @@ import { z } from 'zod';
 const isoDate = z.iso.date().transform((value) => new Date(`${value}T00:00:00`));
 
 export const PAYMENT_METHODS = ['MPESA', 'EMOLA', 'BANK_TRANSFER', 'CARD', 'CASH'] as const;
+/** Methods new requests may use. e-Mola, bank transfer and card are shown as unavailable for now. */
+export const AVAILABLE_PAYMENT_METHODS: readonly (typeof PAYMENT_METHODS)[number][] = ['MPESA', 'CASH'];
 
 /** Country of the contact, ISO 3166-1 alpha-2 (MZ, ZA, PT…). Mozambique when not given. */
 const country = z
@@ -44,7 +46,7 @@ export const RentalRequestSchema = z
       .trim()
       .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
     country,
-    paymentMethod: z.enum(PAYMENT_METHODS),
+    paymentMethod: z.enum(PAYMENT_METHODS).refine((m) => AVAILABLE_PAYMENT_METHODS.includes(m), 'This payment method is currently unavailable'),
     startDate: isoDate,
     endDate: isoDate,
     intendedUse: z.string().trim().max(1000).optional(),

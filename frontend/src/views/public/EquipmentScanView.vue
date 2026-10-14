@@ -57,7 +57,8 @@ const form = reactive({
   email: '',
   phone: '',
   country: DEFAULT_COUNTRY,
-  paymentMethod: 'MPESA' as PaymentMethod,
+  // Cash by default: tapping M-Pesa is what starts the M-Pesa payment
+  paymentMethod: 'CASH' as PaymentMethod,
   startDate: isoDay(1),
   endDate: isoDay(7),
   intendedUse: '',
@@ -305,15 +306,27 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
             <label
               v-for="m in PAYMENT_METHODS"
               :key="m.value"
-              class="flex cursor-pointer items-center gap-2.5 rounded-lg border p-2.5 transition"
-              :class="form.paymentMethod === m.value ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50'"
+              class="relative flex items-center gap-2.5 rounded-lg border p-2.5 transition"
+              :class="[
+                !m.available ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60' : 'cursor-pointer',
+                m.available && (form.paymentMethod === m.value ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50'),
+              ]"
+              :title="m.available ? undefined : 'Currently unavailable'"
             >
               <!-- Tapping M-Pesa starts the payment straight away -->
-              <input type="radio" name="paymentMethod" :value="m.value" :checked="form.paymentMethod === m.value" class="sr-only" @change="choosePayment(m.value)" />
+              <input
+                type="radio"
+                name="paymentMethod"
+                :value="m.value"
+                :checked="form.paymentMethod === m.value"
+                :disabled="!m.available"
+                class="sr-only"
+                @change="choosePayment(m.value)"
+              />
               <component :is="m.icon" class="size-4 shrink-0" :class="form.paymentMethod === m.value ? 'text-brand-700' : 'text-slate-400'" />
               <span class="min-w-0">
                 <span class="block text-sm font-medium text-slate-800">{{ m.label }}</span>
-                <span class="block truncate text-xs text-slate-400">{{ m.value === 'MPESA' ? 'Pay the deposit now' : m.hint }}</span>
+                <span class="block truncate text-xs text-slate-400">{{ !m.available ? 'Unavailable' : m.value === 'MPESA' ? 'Pay the deposit now' : m.hint }}</span>
               </span>
             </label>
           </div>
