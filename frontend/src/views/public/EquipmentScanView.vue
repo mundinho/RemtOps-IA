@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Banknote, Info, LoaderCircle, MapPin, ScanLine, Send, Smartphone, WandSparkles } from '@lucide/vue';
+import { Banknote, CircleCheck, CircleX, Info, LoaderCircle, MapPin, ScanLine, Send, Smartphone, WandSparkles } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
@@ -76,7 +76,7 @@ function fillDemo(c: CustomerOption) {
   fieldErrors.value = {};
 }
 
-// ── M-Pesa: deposit paid before the request is sent ──
+// ── M-Pesa: tapping the M-Pesa option charges the deposit right away; "Submit" sends the paid request ──
 const isMpesa = computed(() => form.paymentMethod === 'MPESA');
 const mpesaPhone = ref('');
 const mpesaCountry = ref('MZ');
@@ -85,46 +85,80 @@ const deposit = computed(() => {
   const value = Math.round(estimate.value * equipment.value.mpesa.depositPercent) / 100;
   return equipment.value.mpesa.maxAmount ? Math.min(value, equipment.value.mpesa.maxAmount) : value;
 });
-// Defaults to the contact phone
-watch(isMpesa, (on) => {
-  if (on && !mpesaPhone.value) mpesaPhone.value = form.phone;
-});
+const isVodacom = (phone: string) => /^(\+?258)?8[45]\d{7}$/.test(phone.replace(/\s/g, ''));
 
-const checkout = ref<{ id: string; amount: number } | null>(null);
+interface MpesaPayment {
+  id: string;
+  amount: number;
+  status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  transactionId?: string | null;
+  message?: string | null;
+}
+const payment = ref<MpesaPayment | null>(null);
+const paying = ref(false);
+/** Paid for different dates than the ones now in the form → must pay again. */
+const paymentOutdated = computed(() => payment.value?.status === 'SUCCESS' && Math.abs(payment.value.amount - deposit.value) > 0.009);
+const paid = computed(() => payment.value?.status === 'SUCCESS' && !paymentOutdated.value);
+
 let poll: ReturnType<typeof setInterval> | undefined;
 onUnmounted(() => clearInterval(poll));
 
-function followCheckout(id: string, amount: number) {
-  checkout.value = { id, amount };
+function followPayment(id: string) {
+  clearInterval(poll);
   poll = setInterval(async () => {
     try {
       const state = await publicApi.checkout(id);
-      if (state.status === 'SUCCESS' && state.rentalId) {
-        clearInterval(poll);
-        await router.push({ name: 'request-status', params: { id: state.rentalId } });
-      } else if (state.status === 'FAILED') {
-        clearInterval(poll);
-        checkout.value = null;
-        submitError.value = state.message ?? 'The M-Pesa payment did not go through. Please try again.';
-      }
+      if (state.status === 'PENDING' || !payment.value || payment.value.id !== id) return;
+      clearInterval(poll);
+      payment.value = { ...payment.value, status: state.status, transactionId: state.transactionId, message: state.message };
     } catch {
       // keep polling; a transient network error must not lose the payment
     }
   }, 2500);
 }
 
+/** Charges the deposit now — called when the customer taps M-Pesa (or "Pay again"). */
+async function payWithMpesa() {
+  if (paying.value || payment.value?.status === 'PENDING' || paid.value) return;
+  if (!mpesaPhone.value) mpesaPhone.value = form.phone;
+  if (!isVodacom(mpesaPhone.value)) {
+    fieldErrors.value = { ...fieldErrors.value, mpesaPhone: ['Enter a Vodacom M-Pesa number (84 or 85), then tap "Pay now"'] };
+    return;
+  }
+  paying.value = true;
+  submitError.value = null;
+  fieldErrors.value = {};
+  try {
+    const payload = { ...form, intendedUse: form.intendedUse.trim() || undefined, paymentMethod: 'MPESA' as const };
+    const started = await publicApi.mpesaCheckout(code, { ...payload, mpesaPhone: mpesaPhone.value });
+    payment.value = { id: started.checkoutId, amount: started.amount, status: 'PENDING' };
+    followPayment(started.checkoutId);
+  } catch (e) {
+    // Nothing was charged: the form is invalid or the gateway refused before charging
+    if (e instanceof ApiError && e.details) fieldErrors.value = e.details;
+    submitError.value =
+      e instanceof ApiError && e.details ? 'Complete the highlighted fields, then tap "Pay now".' : e instanceof Error ? e.message : 'Could not start the payment';
+  } finally {
+    paying.value = false;
+  }
+}
+
+function choosePayment(method: PaymentMethod) {
+  form.paymentMethod = method;
+  if (method === 'MPESA') void payWithMpesa();
+}
+
 async function submit() {
+  if (isMpesa.value && !paid.value) {
+    submitError.value = paymentOutdated.value ? 'The dates changed after paying — pay again for the new dates.' : 'Pay the deposit with M-Pesa first.';
+    return;
+  }
   submitting.value = true;
   submitError.value = null;
   fieldErrors.value = {};
   try {
     const payload = { ...form, intendedUse: form.intendedUse.trim() || undefined };
-    if (isMpesa.value) {
-      const started = await publicApi.mpesaCheckout(code, { ...payload, mpesaPhone: mpesaPhone.value });
-      followCheckout(started.checkoutId, started.amount);
-      return;
-    }
-    const created = await publicApi.createRequest(code, payload);
+    const created = await publicApi.createRequest(code, isMpesa.value ? { ...payload, mpesaCheckoutId: payment.value!.id } : payload);
     await router.push({ name: 'request-status', params: { id: created.id } });
   } catch (e) {
     if (e instanceof ApiError && e.details) fieldErrors.value = e.details;
@@ -272,27 +306,60 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
               class="flex cursor-pointer items-center gap-2.5 rounded-lg border p-2.5 transition"
               :class="form.paymentMethod === m.value ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50'"
             >
-              <input v-model="form.paymentMethod" type="radio" name="paymentMethod" :value="m.value" class="sr-only" />
+              <!-- Tapping M-Pesa starts the payment straight away -->
+              <input type="radio" name="paymentMethod" :value="m.value" :checked="form.paymentMethod === m.value" class="sr-only" @change="choosePayment(m.value)" />
               <component :is="m.icon" class="size-4 shrink-0" :class="form.paymentMethod === m.value ? 'text-brand-700' : 'text-slate-400'" />
               <span class="min-w-0">
                 <span class="block text-sm font-medium text-slate-800">{{ m.label }}</span>
-                <span class="block truncate text-xs text-slate-400">{{ m.hint }}</span>
+                <span class="block truncate text-xs text-slate-400">{{ m.value === 'MPESA' ? 'Pay the deposit now' : m.hint }}</span>
               </span>
             </label>
           </div>
           <p v-if="!isMpesa" class="text-xs text-slate-400">Payment is due on the last rental day. Nothing is charged now.</p>
 
-          <!-- M-Pesa: the deposit is paid before the request is sent -->
+          <!-- M-Pesa: deposit charged as soon as the option is tapped -->
           <div v-else class="space-y-3 rounded-lg border border-brand-200 bg-brand-50/60 p-3">
-            <div>
-              <span class="text-sm font-medium text-slate-700">M-Pesa number (Vodacom 84 / 85)</span>
-              <PhoneInput v-model="mpesaPhone" v-model:country="mpesaCountry" />
-              <span v-if="errorOf('mpesaPhone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('mpesaPhone') }}</span>
-              <span v-else class="mt-1 block text-xs text-slate-500">You confirm the payment on this phone with your M-Pesa PIN.</span>
+            <!-- Paid -->
+            <div v-if="paid" class="flex items-start gap-2.5 text-sm">
+              <CircleCheck class="mt-0.5 size-5 shrink-0 text-emerald-600" />
+              <p class="text-slate-700">
+                <span class="font-semibold text-slate-900">Deposit paid — {{ formatMoney(payment!.amount) }}</span><br />
+                M-Pesa transaction {{ payment!.transactionId }}. Now tap <span class="font-semibold">Submit rental request</span>.
+              </p>
             </div>
+
+            <!-- Waiting for the PIN -->
+            <div v-else-if="payment?.status === 'PENDING'" class="flex items-start gap-2.5 text-sm">
+              <LoaderCircle class="mt-0.5 size-5 shrink-0 animate-spin text-brand-600" />
+              <p class="text-slate-700">
+                <span class="font-semibold text-slate-900">Confirm {{ formatMoney(payment.amount) }} on your phone</span><br />
+                Enter your M-Pesa PIN on {{ mpesaPhone }}. This updates by itself.
+              </p>
+            </div>
+
+            <!-- Not paid yet / failed / dates changed -->
+            <template v-else>
+              <p v-if="payment?.status === 'FAILED'" class="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-2.5 text-sm text-rose-700">
+                <CircleX class="mt-0.5 size-4 shrink-0" /> {{ payment.message ?? 'The M-Pesa payment did not go through.' }}
+              </p>
+              <p v-else-if="paymentOutdated" class="rounded-md bg-amber-50 p-2.5 text-sm text-amber-800">
+                The dates changed after paying {{ formatMoney(payment!.amount) }} — pay again for the new dates (the first payment will be refunded).
+              </p>
+              <div>
+                <span class="text-sm font-medium text-slate-700">M-Pesa number (Vodacom 84 / 85)</span>
+                <PhoneInput v-model="mpesaPhone" v-model:country="mpesaCountry" />
+                <span v-if="errorOf('mpesaPhone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('mpesaPhone') }}</span>
+              </div>
+              <button type="button" class="btn-primary w-full" :disabled="paying || !days" @click="payWithMpesa">
+                <LoaderCircle v-if="paying" class="size-4 animate-spin" />
+                <Smartphone v-else class="size-4" />
+                Pay {{ formatMoney(deposit) }} now
+              </button>
+            </template>
+
             <p class="text-xs text-slate-600">
-              A <span class="font-semibold">{{ equipment.mpesa.depositPercent }}% deposit</span> is paid now to submit the request; the balance is due on the
-              last rental day. If the request is not approved, the deposit is refunded.
+              A <span class="font-semibold">{{ equipment.mpesa.depositPercent }}% deposit</span> is charged to submit the request; the balance is due on the last
+              rental day. If the request is not approved, the deposit is refunded.
             </p>
           </div>
         </fieldset>
@@ -303,27 +370,17 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
             <span class="font-semibold tabular-nums text-slate-900">{{ formatMoney(estimate) }}</span>
           </div>
           <div v-if="isMpesa" class="flex items-center justify-between border-t border-slate-200 pt-1">
-            <span class="font-medium text-brand-800">Pay now with M-Pesa</span>
-            <span class="font-semibold tabular-nums text-brand-800">{{ formatMoney(deposit) }}</span>
+            <span class="font-medium text-brand-800">{{ paid ? 'Deposit paid (M-Pesa)' : 'Deposit with M-Pesa' }}</span>
+            <span class="font-semibold tabular-nums text-brand-800">{{ formatMoney(paid ? payment!.amount : deposit) }}</span>
           </div>
         </div>
 
         <p v-if="submitError" class="rounded-lg bg-rose-50 p-2.5 text-sm text-rose-700">{{ submitError }}</p>
 
-        <!-- Waiting for the PIN -->
-        <div v-if="checkout" class="flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
-          <LoaderCircle class="mt-0.5 size-5 shrink-0 animate-spin text-brand-600" />
-          <div class="text-sm">
-            <p class="font-semibold text-slate-900">Confirm {{ formatMoney(checkout.amount) }} on your phone</p>
-            <p class="mt-0.5 text-slate-600">Enter your M-Pesa PIN. Your request is sent as soon as the payment is confirmed.</p>
-          </div>
-        </div>
-
-        <button v-else type="submit" :disabled="submitting || !days" class="btn-primary w-full py-2.5">
+        <button type="submit" :disabled="submitting || !days || (isMpesa && !paid)" class="btn-primary w-full py-2.5">
           <LoaderCircle v-if="submitting" class="size-4 animate-spin" />
-          <Smartphone v-else-if="isMpesa" class="size-4" />
           <Send v-else class="size-4" />
-          {{ isMpesa ? `Pay ${formatMoney(deposit)} with M-Pesa and submit` : 'Submit rental request' }}
+          Submit rental request
         </button>
         <p class="text-center text-xs text-slate-400">
           Availability, maintenance, documents, risk and payments are checked automatically by our agents.

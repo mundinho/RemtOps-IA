@@ -3,7 +3,7 @@ import { http } from './http';
 
 export const publicApi = {
   equipment: (code: string) => http<PublicEquipment>(`/public/equipment/${code}`),
-  createRequest: (code: string, payload: RentalRequestPayload) =>
+  createRequest: (code: string, payload: RentalRequestPayload & { mpesaCheckoutId?: string }) =>
     http<RentalRequestCreated>(`/public/equipment/${code}/rental-requests`, {
       method: 'POST',
       body: JSON.stringify(payload),

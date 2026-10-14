@@ -47,11 +47,11 @@ de dados se o utilizador continua ativo, ou se a conta do cliente continua `ACTI
 |---|---|---|
 | GET | `/health` | Estado da API e do LLM em uso: `{ status, llm: { provider, model } }` |
 | GET | `/public/equipment/:code` | Dados públicos da máquina (`code` = `EQP-001`…) |
-| POST | `/public/equipment/:code/rental-requests` | Cria um pedido de aluguer (**202**). Com token de cliente, a empresa e o NUIT vêm da conta |
+| POST | `/public/equipment/:code/rental-requests` | Cria um pedido de aluguer (**202**). Com token de cliente, a empresa e o NUIT vêm da conta. Com `paymentMethod: "MPESA"` exige `mpesaCheckoutId` de um pagamento confirmado, desta máquina, para as mesmas datas e ainda não usado |
 | POST | `/public/equipment/:code/assistant` | Mensagem para o assistente (chat) |
 | GET | `/public/rental-requests/:id` | Estado do pedido para o cliente, incluindo o sinal M-Pesa (`mpesa`) |
-| POST | `/public/equipment/:code/mpesa-checkout` | **Pedido pago com M-Pesa**: o formulário do QR + `mpesaPhone` (Vodacom 84/85). Valida o pedido, cobra o sinal (PIN no telemóvel) e responde logo `202` com `checkoutId`. O pedido de aluguer só é criado quando o pagamento é confirmado |
-| GET | `/public/mpesa-checkouts/:id` | Estado do checkout: `PENDING`, `SUCCESS` (com `rentalId`) ou `FAILED` (com o motivo) |
+| POST | `/public/equipment/:code/mpesa-checkout` | **Pagamento M-Pesa, disparado quando o cliente toca na opção M-Pesa**: o formulário do QR + `mpesaPhone` (Vodacom 84/85). Valida o formulário (se for inválido não cobra nada), cobra o sinal (PIN no telemóvel) e responde logo `202` com `checkoutId`. Não cria o pedido |
+| GET | `/public/mpesa-checkouts/:id` | Estado do pagamento: `PENDING`, `SUCCESS` ou `FAILED` (com o motivo); `rentalId` depois de submetido |
 | GET | `/public/demo-customers` | Clientes de demonstração (ajuda da apresentação no formulário do QR) |
 | GET | `/equipment/:code/qr` | Imagem PNG do QR code (pública porque um `<img>` não envia token) |
 

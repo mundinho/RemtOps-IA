@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 import { answerCustomer } from '../agents/assistant/CustomerAssistant.js';
 import { prisma } from '../database/prisma.js';
 import { eventBus } from '../events/eventBus.js';
@@ -8,7 +9,7 @@ import { AssistantChatSchema, EquipmentCodeParam, IdParam, MpesaCheckoutSchema, 
 import { AppError } from '../utils/errors.js';
 import { listCustomers } from '../services/customer.service.js';
 import { getPublicEquipment } from '../services/equipment.service.js';
-import { getCheckout, getRentalDeposit, startCheckout } from '../services/mpesa.service.js';
+import { getCheckout, getRentalDeposit, startCheckout, submitPaidRequest } from '../services/mpesa.service.js';
 import { createRentalRequest, getRequestStatus } from '../services/rental.service.js';
 
 /** Endpoints reached by scanning a physical QR code. */
@@ -30,13 +31,17 @@ async function withAccountCompany<T extends object>(res: Response, form: T): Pro
 export async function createRequest(req: Request, res: Response) {
   const { code } = EquipmentCodeParam.parse(req.params);
   const input = await withAccountCompany(res, RentalRequestSchema.parse(req.body));
-  // M-Pesa is paid before the request exists — those go through /mpesa-checkout.
-  if (input.paymentMethod === 'MPESA') {
-    throw new AppError(400, 'M-Pesa requests are paid first', { paymentMethod: ['Pay the deposit with M-Pesa to submit'] });
-  }
 
-  const request = await createRentalRequest(code, input);
-  eventBus.emit('rental.requested', { rentalId: request.id });
+  let request: Awaited<ReturnType<typeof createRentalRequest>>;
+  if (input.paymentMethod === 'MPESA') {
+    // The deposit was paid when the customer tapped M-Pesa — the submit must bring that payment.
+    const { mpesaCheckoutId } = z.object({ mpesaCheckoutId: z.string().min(1).optional() }).parse(req.body);
+    if (!mpesaCheckoutId) throw new AppError(400, 'Pay the deposit with M-Pesa first', { paymentMethod: ['Pay the deposit with M-Pesa first'] });
+    request = await submitPaidRequest(code, input, mpesaCheckoutId);
+  } else {
+    request = await createRentalRequest(code, input);
+    eventBus.emit('rental.requested', { rentalId: request.id });
+  }
 
   // 202 Accepted: the request is stored; the decision is taken asynchronously by the agents.
   res.status(202).json({ ...request, statusUrl: `/api/public/rental-requests/${request.id}` });
@@ -83,8 +88,9 @@ export async function requestStatus(req: Request, res: Response) {
 }
 
 /**
- * M-Pesa checkout: validates the form, charges the deposit (PIN on the phone) and, once paid, creates
- * the rental request. Answers at once; the form polls the checkout until it is paid or failed.
+ * M-Pesa payment, started when the customer taps M-Pesa on the QR form: validates the form and charges the
+ * deposit (PIN on the phone). No request yet — "Submit rental request" consumes the paid deposit afterwards.
+ * Answers at once; the form polls the payment until it is paid or failed.
  */
 export async function mpesaCheckout(req: Request, res: Response) {
   const { code } = EquipmentCodeParam.parse(req.params);
