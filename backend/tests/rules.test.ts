@@ -299,6 +299,12 @@ describe('M-Pesa deposit', () => {
     expect(depositAmount(1_234.56)).toBe(123.46);
   });
 
+  it('never charges below the M-Pesa minimum (1 MZN) nor above the total', () => {
+    expect(depositAmount(1)).toBe(1); // 10 % of 1 MZN would be 0.10
+    expect(depositAmount(0.5)).toBe(0.5); // a total below 1 MZN is charged in full
+    expect(depositAmount(2)).toBe(1);
+  });
+
   it('only accepts Vodacom numbers (84 / 85) for M-Pesa', () => {
     expect(mpesaMsisdn('+258 84 123 4567')).toBe('258841234567');
     expect(mpesaMsisdn('851234567')).toBe('258851234567');

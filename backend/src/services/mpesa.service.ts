@@ -32,9 +32,14 @@ const LOST_AFTER_MS = 17 * 60_000;
 /** Paid on the form but no request submitted within this time → listed as a refund to do. */
 const UNSUBMITTED_AFTER_MS = 30 * 60_000;
 
+/** M-Pesa does not accept less than 1 MZN. */
+export const MPESA_MIN_AMOUNT = 1;
+
+/** The deposit: the configured share of the total, never below the M-Pesa minimum nor above the total. */
 export function depositAmount(total: number): number {
-  const deposit = roundMoney((total * env.MPESA_DEPOSIT_PERCENT) / 100);
-  return env.MPESA_MAX_AMOUNT > 0 ? Math.min(deposit, env.MPESA_MAX_AMOUNT) : deposit;
+  const share = roundMoney((total * env.MPESA_DEPOSIT_PERCENT) / 100);
+  const capped = env.MPESA_MAX_AMOUNT > 0 ? Math.min(share, env.MPESA_MAX_AMOUNT) : share;
+  return roundMoney(Math.min(total, Math.max(MPESA_MIN_AMOUNT, capped)));
 }
 
 /** M-Pesa is Vodacom: numbers 84 / 85 only. */

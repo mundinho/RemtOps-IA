@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Banknote, CircleCheck, CircleX, Info, LoaderCircle, MapPin, ScanLine, Send, Smartphone, WandSparkles } from '@lucide/vue';
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
@@ -82,8 +82,10 @@ const mpesaPhone = ref('');
 const mpesaCountry = ref('MZ');
 const deposit = computed(() => {
   if (!equipment.value) return 0;
-  const value = Math.round(estimate.value * equipment.value.mpesa.depositPercent) / 100;
-  return equipment.value.mpesa.maxAmount ? Math.min(value, equipment.value.mpesa.maxAmount) : value;
+  // Same rule as the API: the configured share, never below the M-Pesa minimum (1 MZN) nor above the total
+  const share = Math.round(estimate.value * equipment.value.mpesa.depositPercent) / 100;
+  const capped = equipment.value.mpesa.maxAmount ? Math.min(share, equipment.value.mpesa.maxAmount) : share;
+  return Math.min(estimate.value, Math.max(1, capped));
 });
 const isVodacom = (phone: string) => /^(\+?258)?8[45]\d{7}$/.test(phone.replace(/\s/g, ''));
 
