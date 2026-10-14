@@ -9,6 +9,11 @@ export const publicApi = {
       body: JSON.stringify(payload),
     }),
   requestStatus: (id: string) => http<RequestStatus>(`/public/rental-requests/${id}`),
+  payMpesa: (id: string, phone: string) =>
+    http<{ status: 'PENDING'; amount: number; message: string }>(`/public/rental-requests/${id}/mpesa`, {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
   assistant: (code: string, messages: ChatTurn[], rentalId?: string) =>
     http<{ reply: string; toolsUsed: string[] }>(`/public/equipment/${code}/assistant`, {
       method: 'POST',

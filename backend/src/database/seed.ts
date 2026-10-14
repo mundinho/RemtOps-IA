@@ -71,6 +71,7 @@ async function clearDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.notification.deleteMany();
   await prisma.alert.deleteMany();
   await prisma.payment.deleteMany();
+  await prisma.mpesaTransaction.deleteMany();
   await prisma.rentalDocument.deleteMany();
   await prisma.rental.deleteMany();
   await prisma.maintenanceOrder.deleteMany();

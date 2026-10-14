@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { approvalRules } from '../src/agents/approval/rules.js';
 import { periodMentionedIn } from '../src/agents/assistant/CustomerAssistant.js';
@@ -9,6 +10,8 @@ import { planFleetMaintenance, type FleetItem } from '../src/agents/maintenance/
 import { maintenanceRules } from '../src/agents/maintenance/rules.js';
 import { onboardingRules, type RegistrationFacts } from '../src/agents/onboarding/rules.js';
 import { RentalRequestSchema } from '../src/models/schemas.js';
+import { bearerToken } from '../src/payments/mpesa.js';
+import { depositAmount, mpesaMsisdn } from '../src/services/mpesa.service.js';
 import { normalizePhone, toSmsText } from '../src/sms/gateway.js';
 import { detectAnomalies } from '../src/agents/risk/RiskMonitor.js';
 import { riskRules } from '../src/agents/risk/rules.js';
@@ -286,5 +289,28 @@ describe('Phone validation — an SMS must be able to arrive', () => {
 
   it('keeps the generic check for other countries', () => {
     expect(phoneOk('+27 82 555 1234', 'ZA')).toBe(true);
+  });
+});
+
+describe('M-Pesa deposit', () => {
+  it('charges the configured share of the rental total, rounded to cents', () => {
+    expect(depositAmount(210_000)).toBe(21_000); // default 10 %
+    expect(depositAmount(1_234.56)).toBe(123.46);
+  });
+
+  it('only accepts Vodacom numbers (84 / 85) for M-Pesa', () => {
+    expect(mpesaMsisdn('+258 84 123 4567')).toBe('258841234567');
+    expect(mpesaMsisdn('851234567')).toBe('258851234567');
+    expect(mpesaMsisdn('+258 82 123 4567')).toBeNull(); // mCel/Tmcel
+    expect(mpesaMsisdn('+258 86 123 4567')).toBeNull(); // Movitel
+  });
+
+  it('builds the bearer token by RSA-encrypting the API key with the portal public key', () => {
+    const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const der = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    const token = bearerToken('test-api-key', der); // portal gives the bare base64 body
+    expect(Buffer.from(token, 'base64')).toHaveLength(256);
+    const pem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    expect(Buffer.from(bearerToken('test-api-key', pem), 'base64')).toHaveLength(256); // PEM accepted too
   });
 });

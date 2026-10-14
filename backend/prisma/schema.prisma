@@ -401,14 +401,15 @@ model Rental {
   /// Engine hours recorded at return — the Risk Agent compares it with the rental length.
   hoursUsed      Int?
 
-  documents     RentalDocument[]
-  executions    AgentExecution[]
-  reviews       HumanReview[]
-  notifications Notification[]
-  alerts        Alert[]
-  payments      Payment[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  documents         RentalDocument[]
+  executions        AgentExecution[]
+  reviews           HumanReview[]
+  notifications     Notification[]
+  alerts            Alert[]
+  payments          Payment[]
+  mpesaTransactions MpesaTransaction[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([equipmentId, startDate, endDate])
   @@index([customerId])
@@ -436,6 +437,38 @@ model RentalDocument {
   updatedAt         DateTime       @updatedAt
 
   @@index([customerId, type])
+}
+
+enum MpesaStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+/// One M-Pesa C2B request (Vodacom Mozambique): the customer confirms it with their PIN on the phone.
+/// Kept in full for audit — what was asked, what Vodacom answered.
+model MpesaTransaction {
+  id                    String      @id @default(cuid())
+  rentalId              String
+  rental                Rental      @relation(fields: [rentalId], references: [id])
+  /// 258XXXXXXXXX
+  msisdn                String
+  amount                Decimal     @db.Decimal(12, 2)
+  status                MpesaStatus @default(PENDING)
+  /// Our references, sent to Vodacom (input_TransactionReference / input_ThirdPartyReference)
+  transactionReference  String
+  thirdPartyReference   String      @unique
+  /// Vodacom's answer
+  providerTransactionId String?
+  conversationId        String?
+  responseCode          String?
+  responseDesc          String?
+  /// The Payment (PAID) recorded when it succeeded
+  paymentReference      String?
+  createdAt             DateTime    @default(now())
+  completedAt           DateTime?
+
+  @@index([rentalId, createdAt])
 }
 
 /// Amount due for a rental. Created by the Finance Agent when a rental is approved.

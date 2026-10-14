@@ -78,6 +78,10 @@ codes funcionarem em qualquer rede) e abre o browser no dashboard.
 | `MOZESMS_API_KEY` / `MOZESMS_API_SECRET` | vazio | Chaves do painel MozeSMS (**nunca no Git**) |
 | `SMS_SENDER_ID` | vazio | Remetente aprovado pela MozeSMS; vazio = "MozeSMS" |
 | `SMS_ALLOWLIST` | vazio | Números separados por vírgulas; se definido, só estes recebem SMS reais |
+| `MPESA_PROVIDER` | `simulated` | `simulated` (nenhum dinheiro se move) ou `vodacom` (cobranças reais) |
+| `MPESA_API_KEY` / `MPESA_PUBLIC_KEY` | vazio | Chave da API e chave pública do portal developer.mpesa.vm.co.mz (**nunca no Git**) |
+| `MPESA_SERVICE_PROVIDER_CODE` | vazio | Shortcode da organização que recebe o dinheiro |
+| `MPESA_DEPOSIT_PERCENT` / `MPESA_MAX_AMOUNT` | `10` / `0` | Sinal cobrado por M-Pesa (% do total) e limite opcional por transação (MZN) |
 
 ### Escolher o LLM
 

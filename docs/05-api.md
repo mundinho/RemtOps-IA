@@ -49,7 +49,8 @@ de dados se o utilizador continua ativo, ou se a conta do cliente continua `ACTI
 | GET | `/public/equipment/:code` | Dados públicos da máquina (`code` = `EQP-001`…) |
 | POST | `/public/equipment/:code/rental-requests` | Cria um pedido de aluguer (**202**). Com token de cliente, a empresa e o NUIT vêm da conta |
 | POST | `/public/equipment/:code/assistant` | Mensagem para o assistente (chat) |
-| GET | `/public/rental-requests/:id` | Estado do pedido para o cliente |
+| GET | `/public/rental-requests/:id` | Estado do pedido para o cliente, incluindo o sinal M-Pesa (`mpesa`) |
+| POST | `/public/rental-requests/:id/mpesa` | Paga o sinal por M-Pesa: `{ phone }` (Vodacom 84/85). Responde logo `PENDING`; o cliente confirma com o PIN e o estado passa a pago ou falhado |
 | GET | `/public/demo-customers` | Clientes de demonstração (ajuda da apresentação no formulário do QR) |
 | GET | `/equipment/:code/qr` | Imagem PNG do QR code (pública porque um `<img>` não envia token) |
 

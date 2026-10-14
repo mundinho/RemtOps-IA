@@ -3,6 +3,7 @@ import { CircleCheck, CircleX, Hourglass, LoaderCircle } from '@lucide/vue';
 import { computed, type Component } from 'vue';
 import { useRoute } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
+import MpesaDepositCard from '@/components/rentals/MpesaDepositCard.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
 import DetailList from '@/components/ui/DetailList.vue';
 import { useAsync } from '@/composables/useAsync';
@@ -83,6 +84,14 @@ const inProgress = computed(() => request.value && ['REQUESTED', 'IN_REVIEW'].in
           </ul>
         </div>
       </section>
+
+      <MpesaDepositCard
+        v-if="request.mpesa.available"
+        :rental-id="request.id"
+        :deposit="request.mpesa"
+        :total="request.totalAmount"
+        @changed="refresh({ silent: true })"
+      />
 
       <section v-if="inProgress" class="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
         <ol class="space-y-3">

@@ -46,6 +46,20 @@ const EnvSchema = z.object({
   // Optional safety net: comma-separated numbers (e.g. 258841234567). When set, only these receive real
   // SMS — everyone else stays simulated (useful with demo data, whose numbers may belong to real people).
   SMS_ALLOWLIST: z.string().default(''),
+
+  // M-Pesa (Vodacom Mozambique) C2B — the customer pays a deposit and confirms with their PIN.
+  // "simulated" approves instantly without moving money (demos); "vodacom" charges for real.
+  MPESA_PROVIDER: z.enum(['simulated', 'vodacom']).default('simulated'),
+  MPESA_BASE_URL: z.string().default('https://api.vm.co.mz:18352'),
+  MPESA_API_KEY: z.string().default(''),
+  // Public key from the developer portal (base64, with or without PEM header). Encrypts the API key.
+  MPESA_PUBLIC_KEY: z.string().default(''),
+  // Organisation shortcode that receives the money (input_ServiceProviderCode).
+  MPESA_SERVICE_PROVIDER_CODE: z.string().default(''),
+  // Deposit charged by M-Pesa, as a share of the rental total; the rest is paid by other means.
+  MPESA_DEPOSIT_PERCENT: z.coerce.number().min(1).max(100).default(10),
+  // Optional cap per M-Pesa transaction (MZN). 0 = no cap.
+  MPESA_MAX_AMOUNT: z.coerce.number().min(0).default(0),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

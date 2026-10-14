@@ -123,7 +123,7 @@ export async function listPayments(filter: { status?: PaymentStatus }) {
   return payments.map((p) => ({ ...p, amount: Number(p.amount) }));
 }
 
-async function nextPaymentReference(): Promise<string> {
+export async function nextPaymentReference(): Promise<string> {
   const prefix = `PAY-${new Date().getFullYear()}-`;
   const last = await prisma.payment.findFirst({
     where: { reference: { startsWith: prefix } },

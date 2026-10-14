@@ -3,10 +3,11 @@ import { answerCustomer } from '../agents/assistant/CustomerAssistant.js';
 import { prisma } from '../database/prisma.js';
 import { eventBus } from '../events/eventBus.js';
 import { customerOf } from '../middleware/auth.js';
-import { AssistantChatSchema, EquipmentCodeParam, IdParam, RentalRequestSchema } from '../models/schemas.js';
+import { AssistantChatSchema, EquipmentCodeParam, IdParam, MpesaPaymentSchema, RentalRequestSchema } from '../models/schemas.js';
 import { AppError } from '../utils/errors.js';
 import { listCustomers } from '../services/customer.service.js';
 import { getPublicEquipment } from '../services/equipment.service.js';
+import { getMpesaDeposit, payDepositWithMpesa } from '../services/mpesa.service.js';
 import { createRentalRequest, getRequestStatus } from '../services/rental.service.js';
 
 /** Endpoints reached by scanning a physical QR code. */
@@ -70,5 +71,13 @@ export async function demoCustomers(_req: Request, res: Response) {
 
 export async function requestStatus(req: Request, res: Response) {
   const { id } = IdParam.parse(req.params);
-  res.json(await getRequestStatus(id));
+  const [request, mpesa] = await Promise.all([getRequestStatus(id), getMpesaDeposit(id)]);
+  res.json({ ...request, mpesa });
+}
+
+/** Pays the rental's deposit with M-Pesa. Waits while the customer confirms with their PIN (up to ~2 min). */
+export async function payMpesa(req: Request, res: Response) {
+  const { id } = IdParam.parse(req.params);
+  const { phone } = MpesaPaymentSchema.parse(req.body);
+  res.json(await payDepositWithMpesa(id, phone));
 }

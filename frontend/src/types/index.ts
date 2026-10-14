@@ -394,6 +394,7 @@ export interface RequestStatus {
   customer: { companyName: string };
   createdAt: string;
   updatedAt: string;
+  mpesa: MpesaDeposit;
 }
 
 export type CustomerDocumentType = 'ID_DOCUMENT' | 'INSURANCE_CERTIFICATE' | 'OPERATOR_LICENSE' | 'COMPANY_REGISTRATION';
@@ -514,4 +515,14 @@ export interface Statistics {
   paymentsByStatus: StatPoint[];
   fleetStatus: StatPoint[];
   agents: (StatPoint & { runs: number; tokens: number })[];
+}
+
+/** M-Pesa deposit for an approved rental (request status page). */
+export interface MpesaDeposit {
+  available: boolean;
+  depositPercent: number;
+  amount: number;
+  simulated: boolean;
+  paid: { amount: number | null; transactionId: string | null; at: string | null } | null;
+  lastAttempt: { status: 'PENDING' | 'SUCCESS' | 'FAILED'; message: string | null; at: string } | null;
 }

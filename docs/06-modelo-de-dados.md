@@ -86,6 +86,11 @@ Documentos do cliente: `ID_DOCUMENT`, `INSURANCE_CERTIFICATE`, `OPERATOR_LICENSE
 validade. Com `rentalId = null`, é um documento do cliente reutilizado em todos os alugueres. Os campos
 `fileUrl` e `extractedData` estão reservados para o futuro Document Agent (fotografias).
 
+### `MpesaTransaction`
+Cada pedido de pagamento M-Pesa (C2B): número, valor, as nossas referências, a resposta da Vodacom
+(`responseCode`, `providerTransactionId`) e o estado `PENDING`/`SUCCESS`/`FAILED`. Quando é pago, é criado um
+`Payment` `PAID` com o valor do sinal e o pagamento pendente do aluguer é reduzido.
+
 ### `Payment`
 `reference` (`PAY-2026-0001`), `amount`, `dueDate` (último dia do aluguer), `status` (`PENDING`, `PAID`,
 `OVERDUE`, `CANCELLED`), `method`, `paidAt`.
@@ -147,3 +152,5 @@ Registo de todas as alterações: `actorType` (`AGENT`, `USER`, `SYSTEM`), `acto
 | `20261013120000_customer_accounts_auth` | Passwords, contas de cliente, Onboarding Agent |
 | `20261013180000_email_gateway` | Resultado do envio de email nas notificações (`sentAt`, `providerMessageId`, `deliveryError`) |
 | `20261014090000_contact_country` | País do contacto no cliente e no pedido |
+| `20261014150000_mpesa_transactions` | Transações M-Pesa |
+| `20261014150000_mpesa_transactions` | Transações M-Pesa |

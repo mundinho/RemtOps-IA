@@ -25,6 +25,7 @@ router.get('/public/equipment/:code', publicApi.equipment);
 router.post('/public/equipment/:code/rental-requests', optionalCustomer, publicApi.createRequest);
 router.post('/public/equipment/:code/assistant', publicApi.assistant);
 router.get('/public/rental-requests/:id', publicApi.requestStatus);
+router.post('/public/rental-requests/:id/mpesa', publicApi.payMpesa);
 router.get('/public/demo-customers', publicApi.demoCustomers);
 // QR label image — loaded by <img>, which cannot send a token
 router.get('/equipment/:code/qr', equipment.qrCode);
