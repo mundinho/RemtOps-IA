@@ -19,7 +19,7 @@ export interface RentalRequestFact {
   decisionReason: string | null;
   riskLevel: string | null;
   /** As typed in the public QR form — unverified. */
-  submittedContact: { name: string | null; email: string | null; phone: string | null };
+  submittedContact: { name: string | null; email: string | null; phone: string | null; country: string | null };
   paymentMethod: 'MPESA' | 'EMOLA' | 'BANK_TRANSFER' | 'CARD' | 'CASH' | null;
   approvalConditions: string[];
 }

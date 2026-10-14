@@ -7,7 +7,7 @@
 1. O cliente lê o QR code colado na máquina e abre `/equipment/EQP-001`.
 2. Vê a máquina, o preço por dia e o estado, e preenche:
    - empresa e NUIT;
-   - contacto, email e telefone;
+   - contacto, país, email e telefone;
    - datas;
    - uso previsto;
    - método de pagamento.

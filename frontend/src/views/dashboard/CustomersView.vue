@@ -3,14 +3,17 @@ import { Plus } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
 import DataTable, { type Column } from '@/components/ui/DataTable.vue';
+import Flag from '@/components/ui/Flag.vue';
 import Drawer from '@/components/ui/Drawer.vue';
 import PageHeader from '@/components/ui/PageHeader.vue';
 import Panel from '@/components/ui/Panel.vue';
+import PhoneInput from '@/components/ui/PhoneInput.vue';
 import StatusBadge from '@/components/ui/StatusBadge.vue';
 import { useAsync } from '@/composables/useAsync';
 import { customersApi } from '@/services/customers.api';
 import { ApiError } from '@/services/http';
 import type { Customer, CustomerDocumentType, CustomerPayload } from '@/types';
+import { countryLabel, DEFAULT_COUNTRY } from '@/utils/countries';
 import { formatDate, formatMoney } from '@/utils/format';
 
 const { data, loading, error, refresh } = useAsync(customersApi.list);
@@ -64,6 +67,7 @@ function emptyForm() {
     contactName: '',
     email: '',
     phone: '',
+    country: DEFAULT_COUNTRY,
     creditLimit: '' as string | number,
     notes: '',
     docs: DOC_TYPES.map<DocRow>((d) => ({ type: d.type, onFile: false, documentNumber: '', expiresAt: inOneYear() })),
@@ -86,6 +90,7 @@ function openEdit(customer: Customer) {
     contactName: customer.contactName,
     email: customer.email,
     phone: customer.phone ?? '',
+    country: customer.country,
     creditLimit: customer.creditLimit ?? '',
     notes: customer.notes ?? '',
     docs: DOC_TYPES.map<DocRow>(({ type }) => {
@@ -111,6 +116,7 @@ async function save() {
     contactName: form.value.contactName,
     email: form.value.email,
     phone: form.value.phone,
+    country: form.value.country,
     creditLimit: form.value.creditLimit === '' ? null : Number(form.value.creditLimit),
     notes: form.value.notes,
     documents: form.value.docs
@@ -160,7 +166,7 @@ const inputClass =
         <template #cell-code="{ row }"><span class="font-mono text-xs font-medium text-slate-500">{{ row.code }}</span></template>
         <template #cell-companyName="{ row }">
           <span class="block font-medium text-slate-900">{{ row.companyName }}</span>
-          <span class="text-xs text-slate-400">{{ row.contactName }}</span>
+          <span class="inline-flex items-center gap-1.5 text-xs text-slate-400">{{ row.contactName }} · <Flag :code="row.country" /> {{ countryLabel(row.country) }}</span>
           <span v-if="row.isBlocked" class="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs text-rose-700">Blocked</span>
         </template>
         <template #cell-taxId="{ row }"><span class="font-mono text-xs">{{ row.taxId }}</span></template>
@@ -208,17 +214,17 @@ const inputClass =
           <input v-model="form.contactName" :class="inputClass" />
           <span v-if="errorOf('contactName')" class="mt-1 block text-xs text-rose-600">{{ errorOf('contactName') }}</span>
         </label>
-        <label class="block">
+        <label class="block sm:col-span-2">
           <span class="text-sm font-medium text-slate-700">Email</span>
           <input v-model="form.email" type="email" :class="inputClass" />
           <span v-if="errorOf('email')" class="mt-1 block text-xs text-rose-600">{{ errorOf('email') }}</span>
           <span v-else class="mt-1 block text-xs text-slate-400">The QR form must use this email, or the request is flagged as an identity mismatch.</span>
         </label>
-        <label class="block">
-          <span class="text-sm font-medium text-slate-700">Phone</span>
-          <input v-model="form.phone" type="tel" placeholder="+258 84 000 0000" :class="inputClass" />
-          <span v-if="errorOf('phone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') }}</span>
-        </label>
+        <div class="block sm:col-span-2">
+          <span class="text-sm font-medium text-slate-700">Phone and country</span>
+          <PhoneInput v-model="form.phone" v-model:country="form.country" />
+          <span v-if="errorOf('phone') || errorOf('country')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') ?? errorOf('country') }}</span>
+        </div>
         <label class="block sm:col-span-2">
           <span class="text-sm font-medium text-slate-700">Credit limit (MZN)</span>
           <input v-model="form.creditLimit" type="number" min="0" step="1000" placeholder="No limit" :class="inputClass" />

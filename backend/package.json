@@ -23,6 +23,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
+    "nodemailer": "10.0.12",
     "qrcode": "^1.5.4",
     "zod": "^4.3.6"
   },
@@ -30,6 +31,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.0",
+    "@types/nodemailer": "8.0.2",
     "@types/qrcode": "^1.5.5",
     "prisma": "6.19.3",
     "tsx": "^4.19.2",

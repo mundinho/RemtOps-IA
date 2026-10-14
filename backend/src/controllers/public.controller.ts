@@ -54,7 +54,7 @@ export async function assistant(req: Request, res: Response) {
 export async function demoCustomers(_req: Request, res: Response) {
   const customers = await listCustomers();
   res.json(
-    customers.map(({ id, code, companyName, contactName, taxId, email, phone, isBlocked }) => ({
+    customers.map(({ id, code, companyName, contactName, taxId, email, phone, country, isBlocked }) => ({
       id,
       code,
       companyName,
@@ -62,6 +62,7 @@ export async function demoCustomers(_req: Request, res: Response) {
       taxId,
       email,
       phone,
+      country,
       isBlocked,
     })),
   );

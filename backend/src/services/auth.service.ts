@@ -60,7 +60,7 @@ export async function registerCustomer(input: CustomerRegistrationInput) {
   // A previous self-registration that was rejected and never rented anything is just a draft: start over.
   const isOwnRejectedDraft = existing?.notes === SELF_REGISTERED_NOTE && existing._count.rentals === 0;
   const facts: RegistrationFacts = {
-    submitted: { companyName: input.companyName, taxId: input.taxId, contactName: input.contactName, email: input.email, phone: input.phone },
+    submitted: { companyName: input.companyName, taxId: input.taxId, contactName: input.contactName, email: input.email, phone: input.phone, country: input.country },
     existingRecord:
       existing && !isOwnRejectedDraft
         ? {
@@ -86,6 +86,7 @@ export async function registerCustomer(input: CustomerRegistrationInput) {
     contactName: input.contactName,
     email: input.email,
     phone: input.phone,
+    country: input.country,
   };
 
   const customer = await prisma.$transaction(async (tx) => {
@@ -159,6 +160,7 @@ export async function getCustomerPortal(customerId: string) {
       contactName: customer.contactName,
       email: customer.email,
       phone: customer.phone,
+      country: customer.country,
       loginEmail: customer.loginEmail,
       accountStatus: customer.accountStatus,
       accountDecisionReason: customer.accountDecisionReason,

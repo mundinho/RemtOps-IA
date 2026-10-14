@@ -67,6 +67,7 @@ export async function createRentalRequest(equipmentCode: string, input: RentalRe
           contactName: input.contactName,
           email: input.email,
           phone: input.phone,
+          country: input.country,
           notes: 'Registered through a QR rental request — documents not yet provided.',
         },
       });
@@ -96,6 +97,7 @@ export async function createRentalRequest(equipmentCode: string, input: RentalRe
         contactName: input.contactName,
         contactEmail: input.email,
         contactPhone: input.phone,
+        contactCountry: input.country,
         paymentMethod: input.paymentMethod,
       },
     });
@@ -183,7 +185,7 @@ export async function getRentalForAgent(id: string) {
     decisionReason: rental.decisionReason,
     riskLevel: rental.riskLevel,
     // As typed in the QR form (unverified)
-    submittedContact: { name: rental.contactName, email: rental.contactEmail, phone: rental.contactPhone },
+    submittedContact: { name: rental.contactName, email: rental.contactEmail, phone: rental.contactPhone, country: rental.contactCountry },
     paymentMethod: rental.paymentMethod,
     approvalConditions: rental.approvalConditions,
   };

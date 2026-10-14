@@ -271,6 +271,8 @@ model Customer {
   contactName           String
   email                 String
   phone                 String?
+  /// ISO 3166-1 alpha-2 country of the contact (MZ, ZA, PT…). Drives the phone prefix in the forms.
+  country               String           @default("MZ")
   /// Blacklisted customers are rejected by a deterministic rule — never by the LLM.
   isBlocked             Boolean          @default(false)
   creditLimit           Decimal?         @db.Decimal(12, 2)
@@ -377,6 +379,7 @@ model Rental {
   contactName        String?
   contactEmail       String?
   contactPhone       String?
+  contactCountry     String?
   paymentMethod      PaymentMethod?
   /// Conditions attached by the Approval Agent (e.g. "present valid insurance at pickup").
   approvalConditions String[]       @default([])
@@ -564,22 +567,26 @@ model Alert {
 }
 
 model Notification {
-  id         String              @id @default(cuid())
-  rentalId   String?
-  rental     Rental?             @relation(fields: [rentalId], references: [id])
-  customerId String?
-  customer   Customer?           @relation(fields: [customerId], references: [id])
-  type       NotificationType
-  channel    NotificationChannel
-  recipient  String
-  subject    String
-  body       String
+  id                String              @id @default(cuid())
+  rentalId          String?
+  rental            Rental?             @relation(fields: [rentalId], references: [id])
+  customerId        String?
+  customer          Customer?           @relation(fields: [customerId], references: [id])
+  type              NotificationType
+  channel           NotificationChannel
+  recipient         String
+  subject           String
+  body              String
   /// Set by the Notification Agent from the severity of the underlying event.
-  priority   Severity            @default(MEDIUM)
-  status     NotificationStatus  @default(SIMULATED)
+  priority          Severity            @default(MEDIUM)
+  status            NotificationStatus  @default(SIMULATED)
+  /// Email gateway delivery: when it was accepted by the SMTP server, its message id, or why it failed.
+  sentAt            DateTime?
+  providerMessageId String?
+  deliveryError     String?
   /// e.g. "RETURN_REMINDER:<rentalId>:<date>" — one reminder per rental per day.
-  dedupeKey  String?             @unique
-  createdAt  DateTime            @default(now())
+  dedupeKey         String?             @unique
+  createdAt         DateTime            @default(now())
 
   @@index([priority, createdAt])
 }

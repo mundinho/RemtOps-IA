@@ -65,6 +65,7 @@ Content-Type: application/json
   "contactName": "João Silva",
   "email": "joao.silva@construcoessilva.co.mz",
   "phone": "+258 84 123 4567",
+  "country": "MZ",
   "paymentMethod": "MPESA",
   "startDate": "2026-10-20",
   "endDate": "2026-10-26",

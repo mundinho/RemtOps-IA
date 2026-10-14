@@ -11,6 +11,14 @@ const isoDate = z.iso.date().transform((value) => new Date(`${value}T00:00:00`))
 
 export const PAYMENT_METHODS = ['MPESA', 'EMOLA', 'BANK_TRANSFER', 'CARD', 'CASH'] as const;
 
+/** Country of the contact, ISO 3166-1 alpha-2 (MZ, ZA, PT…). Mozambique when not given. */
+const country = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{2}$/, 'Invalid country')
+  .default('MZ');
+
 /** What the person scanning the QR code fills in. The company is identified by its NUIT. */
 export const RentalRequestSchema = z
   .object({
@@ -22,6 +30,7 @@ export const RentalRequestSchema = z
       .string()
       .trim()
       .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
+    country,
     paymentMethod: z.enum(PAYMENT_METHODS),
     startDate: isoDate,
     endDate: isoDate,
@@ -50,6 +59,7 @@ export const CustomerInputSchema = z.object({
     .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number')
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  country,
   creditLimit: z.coerce.number().min(0).nullable().optional(),
   notes: z.string().trim().max(1000).optional(),
   documents: z
@@ -84,6 +94,7 @@ export const CustomerRegistrationSchema = z.object({
     .string()
     .trim()
     .regex(/^\+?[\d\s]{9,16}$/, 'Invalid phone number'),
+  country,
   password,
 });
 export type CustomerRegistrationInput = z.infer<typeof CustomerRegistrationSchema>;

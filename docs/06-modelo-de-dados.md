@@ -40,6 +40,7 @@ erDiagram
 | `code` | `CUS-001`, … |
 | `taxId` (único) | **NUIT**: identifica a empresa |
 | `companyName`, `contactName`, `email`, `phone` | Dados registados. O `email` é o que o Risk Agent compara com o do formulário |
+| `country` | País do contacto (ISO 2 letras, `MZ` por omissão) |
 | `isBlocked` | Cliente bloqueado: os pedidos são rejeitados por regra |
 | `creditLimit` | Limite de crédito (MZN), opcional |
 | `loginEmail` (único) | Email de acesso ao portal |
@@ -68,7 +69,7 @@ próprio cliente regista-se no portal.
 | `code` | `RNT-2026-0001` |
 | `startDate`, `endDate`, `dailyRate` (instantâneo), `totalAmount` | Período e valor |
 | `intendedUse` | Texto livre do cliente (avaliado pela IA) |
-| `contactName`, `contactEmail`, `contactPhone` | O que foi escrito no formulário, **nunca copiado** para o cliente |
+| `contactName`, `contactEmail`, `contactPhone`, `contactCountry` | O que foi escrito no formulário, **nunca copiado** para o cliente |
 | `paymentMethod` | `MPESA`, `EMOLA`, `BANK_TRANSFER`, `CARD`, `CASH` |
 | `status` | `REQUESTED`, `IN_REVIEW`, `APPROVED`, `REJECTED`, `ACTIVE`, `COMPLETED`, `CANCELLED` (`REQUIRES_HUMAN_REVIEW` é legado) |
 | `workflowStep` | Passo atual: `INTAKE` … `NOTIFY`, `DONE` (permite retomar) |
@@ -144,3 +145,5 @@ Registo de todas as alterações: `actorType` (`AGENT`, `USER`, `SYSTEM`), `acto
 | `20261004120000_document_agent` | Campos para o Document Agent (reservado) |
 | `20261004120100_customer_message` | Mensagem ao cliente no aluguer |
 | `20261013120000_customer_accounts_auth` | Passwords, contas de cliente, Onboarding Agent |
+| `20261013180000_email_gateway` | Resultado do envio de email nas notificações (`sentAt`, `providerMessageId`, `deliveryError`) |
+| `20261014090000_contact_country` | País do contacto no cliente e no pedido |

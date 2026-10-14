@@ -8,6 +8,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue';
 import { useAsync } from '@/composables/useAsync';
 import { agentsApi } from '@/services/agents.api';
 import { rentalsApi } from '@/services/rentals.api';
+import { countryLabel } from '@/utils/countries';
 import { formatDate, formatDateTime, formatMoney, humanize, inclusiveDays } from '@/utils/format';
 import { Bot } from '@lucide/vue';
 import { paymentMethodLabel } from '@/utils/payment';
@@ -45,7 +46,7 @@ const { data: trace } = useAsync(() => agentsApi.executions({ correlationId: pro
           { label: 'Risk', value: rental.riskLevel ? `${humanize(rental.riskLevel)} (${rental.riskScore ?? '—'})` : null },
           { label: 'Return', value: rental.lateDays ? `${rental.lateDays} days late` : rental.status === 'COMPLETED' ? 'On time' : null },
           { label: 'Payment method', value: paymentMethodLabel(rental.paymentMethod) },
-          { label: 'Requested by', value: rental.contactName ? `${rental.contactName} · ${rental.contactEmail} · ${rental.contactPhone}` : null },
+          { label: 'Requested by', value: rental.contactName ? `${rental.contactName} · ${rental.contactEmail} · ${rental.contactPhone}${rental.contactCountry ? ` · ${countryLabel(rental.contactCountry)}` : ''}` : null },
         ]"
       />
 

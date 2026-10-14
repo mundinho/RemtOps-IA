@@ -2,7 +2,7 @@ import type { RuleViolation } from '../core/types.js';
 
 /** What the Onboarding Agent knows about one registration. */
 export interface RegistrationFacts {
-  submitted: { companyName: string; taxId: string; contactName: string; email: string; phone: string };
+  submitted: { companyName: string; taxId: string; contactName: string; email: string; phone: string; country?: string };
   /** The customer record this NUIT already had before the registration (admin or QR request), if any. */
   existingRecord: {
     code: string;

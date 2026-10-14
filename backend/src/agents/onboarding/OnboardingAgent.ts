@@ -56,7 +56,7 @@ export class OnboardingAgent {
             instructions:
               'A company wants to open a customer account to rent construction equipment in Mozambique. ' +
               'Check that the registration looks genuine and consistent: a real-looking company or person name, a real-looking contact name, ' +
-              'an email that fits the company (a free provider like gmail is acceptable for small companies), and a plausible phone number. ' +
+              'an email that fits the company (a free provider like gmail is acceptable for small companies), and a plausible phone number for the given country (ISO code). ' +
               'REJECT obvious test, fake or offensive data (e.g. "asdf", "test test", random letters). Otherwise APPROVE. ' +
               'If the NUIT already has a customer record, its company name should match the submitted one. Be conservative: when unsure, REJECT.',
             fields:

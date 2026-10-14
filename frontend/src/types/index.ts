@@ -160,6 +160,7 @@ export interface Rental {
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  contactCountry: string | null;
   paymentMethod: PaymentMethod | null;
   approvalConditions: string[];
   createdAt: string;
@@ -334,6 +335,7 @@ export interface CustomerOption {
   taxId: string;
   email: string;
   phone: string | null;
+  country: string;
   isBlocked: boolean;
 }
 
@@ -362,6 +364,7 @@ export interface RentalRequestPayload {
   contactName: string;
   email: string;
   phone: string;
+  country: string;
   paymentMethod: PaymentMethod;
   startDate: string;
   endDate: string;
@@ -436,6 +439,7 @@ export interface CustomerRegistrationPayload {
   contactName: string;
   email: string;
   phone: string;
+  country: string;
   password: string;
 }
 
@@ -454,6 +458,7 @@ export interface CustomerPortal {
     contactName: string;
     email: string;
     phone: string | null;
+    country: string;
     loginEmail: string | null;
     accountStatus: AccountStatus | null;
     accountDecisionReason: string | null;
@@ -480,6 +485,7 @@ export interface CustomerPayload {
   contactName: string;
   email: string;
   phone: string;
+  country: string;
   creditLimit: number | null;
   notes: string;
   documents: { type: CustomerDocumentType; documentNumber: string; expiresAt: string }[];

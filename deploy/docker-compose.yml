@@ -1,0 +1,49 @@
+# RentOps on the shared server. Public traffic arrives through the Mailcow nginx
+# (see mailcow-rentops.conf), which reaches these containers over the Mailcow network.
+name: rentops
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rentops-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: equipment_rental
+      POSTGRES_USER: rentops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rentops -d equipment_rental"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: { context: .., dockerfile: deploy/Dockerfile.api }
+    image: rentops-api
+    container_name: rentops-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://rentops:${POSTGRES_PASSWORD}@rentops-db:5432/equipment_rental?schema=public
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [internal, mailcow]
+
+  web:
+    build: { context: .., dockerfile: deploy/Dockerfile.web }
+    image: rentops-web
+    container_name: rentops-web
+    restart: unless-stopped
+    depends_on: [api]
+    networks: [internal, mailcow]
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+  mailcow:
+    external: true
+    name: mailcowdockerized_mailcow-network

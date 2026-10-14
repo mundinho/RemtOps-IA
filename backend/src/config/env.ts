@@ -18,6 +18,22 @@ const EnvSchema = z.object({
   // Signs session tokens (HMAC-SHA256). The default is for local demos only — set your own elsewhere.
   AUTH_SECRET: z.string().min(16).default('dev-only-secret-change-me-please'),
   AUTH_TOKEN_TTL_HOURS: z.coerce.number().positive().default(12),
+
+  // Email gateway. "simulated" stores notifications without sending anything (the default);
+  // "smtp" delivers them through any SMTP server (Gmail app password, Outlook, Brevo, SendGrid, Mailtrap…).
+  EMAIL_PROVIDER: z.enum(['simulated', 'smtp']).default('simulated'),
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  // true = TLS from the start (port 465); false = STARTTLS upgrade (port 587)
+  SMTP_SECURE: z
+    .enum(['true', 'false', ''])
+    .default('')
+    .transform((v) => (v === '' ? undefined : v === 'true')),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  EMAIL_FROM: z.string().default('RentOps <no-reply@rentops.local>'),
+  // Optional: also email the operations notifications (otherwise they stay internal, in the dashboard).
+  OPERATIONS_EMAIL: z.union([z.email(), z.literal('')]).default(''),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

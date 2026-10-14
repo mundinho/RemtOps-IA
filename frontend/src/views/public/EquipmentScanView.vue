@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChatWidget from '@/components/assistant/ChatWidget.vue';
 import AsyncState from '@/components/ui/AsyncState.vue';
+import PhoneInput from '@/components/ui/PhoneInput.vue';
 import StatusBadge from '@/components/ui/StatusBadge.vue';
 import { useAsync } from '@/composables/useAsync';
 import { authApi } from '@/services/auth.api';
@@ -11,6 +12,7 @@ import { ApiError } from '@/services/http';
 import { publicApi } from '@/services/public.api';
 import { session } from '@/services/session';
 import type { CustomerOption, PaymentMethod } from '@/types';
+import { DEFAULT_COUNTRY } from '@/utils/countries';
 import { formatMoney, inclusiveDays } from '@/utils/format';
 import { PAYMENT_METHODS } from '@/utils/payment';
 import { EQUIPMENT_TYPE_LABELS } from '@/utils/status';
@@ -29,7 +31,14 @@ onMounted(async () => {
   if (!session.customer) return;
   try {
     const { profile } = await authApi.portal();
-    Object.assign(form, { companyName: profile.companyName, taxId: profile.taxId, contactName: profile.contactName, email: profile.email, phone: profile.phone ?? '' });
+    Object.assign(form, {
+      companyName: profile.companyName,
+      taxId: profile.taxId,
+      contactName: profile.contactName,
+      email: profile.email,
+      phone: profile.phone ?? '',
+      country: profile.country,
+    });
   } catch {
     // session expired — http() already signed out; the form stays editable
   }
@@ -47,6 +56,7 @@ const form = reactive({
   contactName: '',
   email: '',
   phone: '',
+  country: DEFAULT_COUNTRY,
   paymentMethod: 'MPESA' as PaymentMethod,
   startDate: isoDay(1),
   endDate: isoDay(7),
@@ -62,7 +72,7 @@ const days = computed(() =>
 const estimate = computed(() => (equipment.value ? days.value * equipment.value.dailyRate : 0));
 
 function fillDemo(c: CustomerOption) {
-  Object.assign(form, { companyName: c.companyName, taxId: c.taxId, contactName: c.contactName, email: c.email, phone: c.phone ?? '' });
+  Object.assign(form, { companyName: c.companyName, taxId: c.taxId, contactName: c.contactName, email: c.email, phone: c.phone ?? '', country: c.country });
   fieldErrors.value = {};
 }
 
@@ -170,17 +180,16 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
             <input v-model="form.contactName" autocomplete="name" :class="inputClass" />
             <span v-if="errorOf('contactName')" class="mt-1 block text-xs text-rose-600">{{ errorOf('contactName') }}</span>
           </label>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label class="block min-w-0">
-              <span class="text-sm font-medium text-slate-700">Email</span>
-              <input v-model="form.email" type="email" autocomplete="email" :class="inputClass" />
-              <span v-if="errorOf('email')" class="mt-1 block text-xs text-rose-600">{{ errorOf('email') }}</span>
-            </label>
-            <label class="block min-w-0">
-              <span class="text-sm font-medium text-slate-700">Phone</span>
-              <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="+258 84 123 4567" :class="inputClass" />
-              <span v-if="errorOf('phone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') }}</span>
-            </label>
+          <label class="block">
+            <span class="text-sm font-medium text-slate-700">Email</span>
+            <input v-model="form.email" type="email" autocomplete="email" :class="inputClass" />
+            <span v-if="errorOf('email')" class="mt-1 block text-xs text-rose-600">{{ errorOf('email') }}</span>
+          </label>
+          <div class="block">
+            <span class="text-sm font-medium text-slate-700">Phone</span>
+            <PhoneInput v-model="form.phone" v-model:country="form.country" />
+            <span v-if="errorOf('phone') || errorOf('country')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') ?? errorOf('country') }}</span>
+            <span v-else class="mt-1 block text-xs text-slate-400">Choose your country on the left — the dial code is added for you.</span>
           </div>
         </fieldset>
 

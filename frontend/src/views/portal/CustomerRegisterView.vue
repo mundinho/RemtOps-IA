@@ -2,16 +2,18 @@
 import { CircleCheck, CircleX, LoaderCircle, ShieldCheck, UserCheck, UserPlus } from '@lucide/vue';
 import { onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import PhoneInput from '@/components/ui/PhoneInput.vue';
 import { authApi } from '@/services/auth.api';
 import { ApiError } from '@/services/http';
 import { setCustomer } from '@/services/session';
 import type { RegistrationStatus } from '@/types';
+import { DEFAULT_COUNTRY } from '@/utils/countries';
 import { safeRedirect } from '@/utils/redirect';
 
 const route = useRoute();
 const router = useRouter();
 
-const form = reactive({ companyName: '', taxId: '', contactName: '', email: '', phone: '', password: '', confirm: '' });
+const form = reactive({ companyName: '', taxId: '', contactName: '', email: '', phone: '', country: DEFAULT_COUNTRY, password: '', confirm: '' });
 const submitting = ref(false);
 const submitError = ref<string | null>(null);
 const fieldErrors = ref<Record<string, string[]>>({});
@@ -162,17 +164,16 @@ const errorOf = (field: string) => fieldErrors.value[field]?.[0];
         <input v-model="form.contactName" autocomplete="name" :class="inputClass" />
         <span v-if="errorOf('contactName')" class="mt-1 block text-xs text-rose-600">{{ errorOf('contactName') }}</span>
       </label>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label class="block min-w-0">
-          <span class="text-sm font-medium text-slate-700">Email</span>
-          <input v-model="form.email" type="email" autocomplete="email" :class="inputClass" />
-          <span v-if="errorOf('email')" class="mt-1 block text-xs text-rose-600">{{ errorOf('email') }}</span>
-        </label>
-        <label class="block min-w-0">
-          <span class="text-sm font-medium text-slate-700">Phone</span>
-          <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="+258 84 123 4567" :class="inputClass" />
-          <span v-if="errorOf('phone')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') }}</span>
-        </label>
+      <label class="block">
+        <span class="text-sm font-medium text-slate-700">Email</span>
+        <input v-model="form.email" type="email" autocomplete="email" :class="inputClass" />
+        <span v-if="errorOf('email')" class="mt-1 block text-xs text-rose-600">{{ errorOf('email') }}</span>
+      </label>
+      <div class="block">
+        <span class="text-sm font-medium text-slate-700">Phone</span>
+        <PhoneInput v-model="form.phone" v-model:country="form.country" />
+        <span v-if="errorOf('phone') || errorOf('country')" class="mt-1 block text-xs text-rose-600">{{ errorOf('phone') ?? errorOf('country') }}</span>
+        <span v-else class="mt-1 block text-xs text-slate-400">Choose your country on the left — the dial code is added for you.</span>
       </div>
     </fieldset>
 

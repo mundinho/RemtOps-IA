@@ -92,6 +92,7 @@ const customerData = (input: CustomerInput) => ({
   contactName: input.contactName,
   email: input.email,
   phone: input.phone ?? null,
+  country: input.country,
   creditLimit: input.creditLimit == null ? null : new Prisma.Decimal(input.creditLimit),
   notes: input.notes || null,
 });

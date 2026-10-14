@@ -106,6 +106,7 @@ Verificado na API com Zod antes de qualquer agente:
 | NUIT | Exatamente 9 dígitos |
 | Email | Formato válido; guardado em minúsculas |
 | Telefone | 9–16 dígitos, `+` e espaços opcionais (ex.: `+258 84 123 4567`) |
+| País | Código ISO de 2 letras (`MZ`, `ZA`, `PT`…); Moçambique se não for indicado. Nos formulários escolhe-se no próprio campo do telefone (bandeira + indicativo); escrever um número começado por outro `+indicativo` muda o país sozinho |
 | Datas | `AAAA-MM-DD`; fim ≥ início |
 | Uso previsto | Até 1000 caracteres (opcional) |
 | Método de pagamento | `MPESA`, `EMOLA`, `BANK_TRANSFER`, `CARD`, `CASH` |
